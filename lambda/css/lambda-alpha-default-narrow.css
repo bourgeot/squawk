@@ -1,0 +1,39 @@
+/* This file will hold styles that are loaded using the same media query as the narrow grid. */
+/* If you are using the default media queries provided by Omega, these styles will also
+ *  apply to the normal and widescreen layouts. You may override these styles in the normal 
+ *  and widescreen CSS files as appropriate. */
+
+/***********************************
+        UA LOGO COLORS
+************************************/
+a#ua_link {
+  height: 100%;
+  width: 75%;
+  float: left;
+  margin: 0;
+  display: block;
+  cursor: pointer;
+}
+
+/* blue logo */
+#ua_link.logo_blue {
+  background: url(../images/a-line-blue-transp-small.png) 1em .5em no-repeat transparent;
+}
+
+/* red logo */
+#ua_link.logo_red {
+  background: url(../images/a-line-red-transp-small.png) 1em .5em no-repeat transparent;
+}
+
+/* white logo */
+#ua_link.logo_white {
+  background: url(../images/a-line-white-transp-small.png) 1em .5em no-repeat transparent;
+}
+
+
+/***********************************
+      Narrow-specific BLOCKS
+************************************/
+#block-search-form { /* clears navigation on hand-held devices */ 
+    clear: none;
+}

@@ -1,0 +1,12 @@
+name = Squawk
+description = An add on to the Statuses Module that uses user relationships to control who can view and make status updates.
+package = Squawk
+core = 7.x
+files[] = squawk.module
+files[] = squawk.install
+files[] = squawk.inc
+files[] = handler/views_handler_filter_squawk_st_sender_ur_requestee.inc
+files[] = handler/views_handler_argument_squawk_recipient_is_lead.inc
+files[] = handler/views_handler_filter_squawk_recipient_is_lead.inc
+files[] = handler/views_handler_relationship_squawk_st_ur.inc
+

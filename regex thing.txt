@@ -1,0 +1,4 @@
+$s = "@user1 and @user2, but not @user3,@user4, or @user5 have the email adddress user6@email.arizona.edu, unlike @user6 (@user7).";
+$p = "/@([A-Za-z0-9_]+)/";
+preg_match_all($p, $s, $match);
+dsm($match);

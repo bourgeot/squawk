@@ -1,0 +1,1250 @@
+<?php
+/*
+ * Last update 19 Oct.
+ * Moving user/stuff to channels/stuff
+ * 
+ */
+
+/* 
+ *	implements hook_menu
+ */
+function squawk_menu() {
+	 $items['frontpage'] = array(
+		'page callback' => 'squawk_frontpage',
+		'access arguments' => array('access content'),
+		'type' => MENU_CALLBACK,
+	);
+	$items['channels/%user'] = array(
+		'title' => t('My Channel'),
+		'title callback' => 'squawk_channels_page_title',
+		'title arguments' => array(1),
+		'page callback' => 'squawk_user_channel',
+		'page arguments' => array(1),
+		'access callback' => TRUE,
+		'type' => MENU_NORMAL_ITEM,
+		'file' => 'squawk.pages.inc',
+	);
+	$items['channels/%user/news'] = array(
+		'type' => MENU_DEFAULT_LOCAL_TASK,
+		'title' => 'News',
+		'weight' => -5,
+	);	
+	 // Going to be the default front page and login pages.
+	$items['channels'] = array(
+		'title' => 'Welcome to Squawk!',
+		'title callback' => 'squawk_channels_menu_title',
+		'page callback' => 'squawk_channels_page',
+		'access callback' => TRUE,
+		'file' => 'squawk.pages.inc',
+		'weight' => -10,
+		//'menu_name' => 'user-menu',
+	);
+	//this is new. This is for the Update node type
+	$items['channels/%/update/add'] = array(
+		'title' => 'Post an Update',
+		'description' =>
+			'Post an update on this person\'s channel.',
+		'page callback' => 'squawk_open_update',
+		'page arguments' => array(1,3),
+		'access callback' => TRUE,
+		'type' => MENU_LOCAL_TASK,
+	);
+	$items['channels/%user/profile'] = array(
+		'title' => 'My Profile',
+		'description' => 'Edit your user profile',
+		'type' => MENU_LOCAL_TASK,
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('user_profile_form', 1),
+		'access callback' => 'user_edit_access',
+		'access arguments' => array(1),
+		'weight' => 5,
+	);
+	$items['reports'] = array(
+		'title' => t('Direct Reports'),
+		'page callback' => 'squawk_relationships_themed',
+		'page arguments' => array( 'reports'),
+		'access callback' => TRUE,
+		'menu name' => 'Squawk!',
+		'type' => MENU_NORMAL_ITEM,
+	);
+	$items['leads'] = array(
+		'title' => t('Leaders'),
+		'page callback' => 'squawk_relationships_themed',
+		'page arguments' => array('leads'),
+		'menu name' => 'Squawk!',
+		'access callback' => TRUE,
+		'type' => MENU_NORMAL_ITEM,
+	);
+	
+	$items['peers'] = array(
+		'title' => t('Peers'),
+		'page callback' => 'squawk_relationships_themed',
+		'page arguments' => array('peers'),
+		'access callback' => TRUE,
+		'menu name' => 'squawk',
+		'type' => MENU_NORMAL_ITEM,
+	);
+	$items['user/%/options'] = array(
+		'title' => 'Options',
+		'description' => 'Change sort options and other things',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('squawk_user_options_form'),
+		'access callback' => 'squawk_access_edit_settings',
+		'access arguments' => array(1),
+		'type' => MENU_LOCAL_TASK,
+	);
+	//this is new. This is for the Update node type
+/*
+	$items['user/%/update/add'] = array(
+		'title' => 'New Update!',
+		'description' =>
+			'Post an update on this person\'s channel.',
+		'page callback' => 'squawk_open_update',
+		'page arguments' => array(1,3),
+		'access callback' => TRUE,
+		'type' => MENU_LOCAL_TASK,
+	);
+*/
+	$items['node/%node/back'] = array(
+		'title' => 'Back',
+		'description' => 'Return to the person\'s channel.',
+		'access callback' => TRUE,
+		'type' => MENU_LOCAL_TASK,
+		'page callback' => 'squawk_back',
+		'page arguments' => array(1),
+	);
+   return $items;
+}
+/*
+ * implements hook_init
+ */
+ 
+function squawk_init() {
+  //this allows the user edit profile form to be well behaved.
+	module_load_include('inc', 'user', 'user.pages');
+}
+/*
+ * implements hook_menu_alter
+ */
+function squawk_menu_alter(&$items) {
+
+	$items['node/%node/edit']['title'] = 'Zogg';
+	$items['node/%node/edit']['title callback'] = 'squawk_node_edit_title_callback';
+	$items['node/%node/edit']['title arguments'] = array(1);
+
+}
+
+ /**
+ * Implements hook_form_alter().
+ */
+function squawk_form_alter(&$form, &$form_state, $form_id) {
+	//dsm($form);
+	//dsm($form_state);
+	if ($form_id == 'update_node_form') {
+    $form_state['open_mode']='';
+		//there are two cases where this form is called, create a new node and edit/forward an existing node.
+		//the call state is tucked in the $form_state build_info args[1]
+		if (!isset($form_state['build_info']['args'][1])) {
+			//the drupal default edit tab has been clicked but there is no args1...but it is still an edit so
+			//treat it that way.
+			$form_state['open_mode'] = 'edit';
+		}
+		else {
+			$form_state['open_mode'] = $form_state['build_info']['args'][2];
+		}
+		//switch ($form_state['build_info']['args'][1]) {
+		switch ($form_state['open_mode']) {
+			case 'add':
+				global $user;
+				$terms = squawk_fetch_user_tags($user->uid);	
+				$tag_default_value = array();
+				$options = array();
+				//make sure it has a value. It should have.
+				if(!empty($terms)) {
+					foreach($terms['tag_set'] as $term) {
+						//build the options array for the checkboxes control
+						$options[$term->tid] = $term->name;
+						if( $term->name == 'New') {
+							$tag_default_value[$term->tid] = $term->tid;
+						}
+					}
+				}
+				if ($options) {
+						$form['field_tags']['und']['#options'] = $options;
+				}
+
+				variable_set('node_preview_test_update', 0);
+				//the zeroth argument in $form_state['build_info']['args'] should be the current user
+				//the first argument should be the recipient user (where we are)
+				//test setting a default value in this code hook
+				$form['field_recipient']['und'][0]['value']['#default_value'] = $form_state['build_info']['args'][1];
+				$form['field_recipient']['#disabled'] = TRUE; 
+				//$form['field_recipient']['#type']='value';
+				//$form['field_recipient']['#value'] = $form_state['build_info']['args'][1];
+			break;
+			case 'edit':
+				//dsm('edit');
+				//dsm($form);
+				//dsm($form_state);
+				/*
+				We don't want the editor changing the content unless that user is also the author. So first compare that. If they are the same, don't do anything. If they are different, move the body, title, and author to a different part of the form, and open the edit box as additional information.
+				*/
+				//author check
+				global $user;
+				$author = squawk_human_name($form['uid']['#value']);
+				if ($user->uid != $form['uid']['#value']) {
+					$date = $form['author']['date']['#default_value'];
+					$form['original_content'] = array(
+						'#attributes' => array(
+							'id' => 'body-original-content',
+						),
+						'#type' => 'fieldset',
+						'#collapsible' => TRUE,
+						'#collapsed' => FALSE,
+						'#title' => 'Previous Update (' . $date .'; ' . $author['human_name'] . '):',
+						'#weight' => 15,
+						'#disabled' => FALSE,
+					);
+					$form['original_content']['original_title'] = array(
+						'#type' => 'textfield',
+						'#title' => 'Previous Title',
+						//'#disabled' => TRUE,
+						'#default_value' => $form['title']['#default_value'],
+						'#weight' => 1,
+					);
+					$form['original_content']['original_body'] = array(
+						'#type' => 'textarea',
+						//'#disabled' => TRUE,
+						'#weight' => 2,
+						'#title' => 'Content: ',
+						'#default_value' =>	$form['body']['und'][0]['#default_value'],
+					);
+					//clear the title and the body
+					$form['title']['#default_value'] = "";
+					$form['body']['und'][0]['#default_value'] = "";
+				}
+				//if it is opened as edit/forward, or 'edit', 
+				/* If it is opened as edit or edit/forward, the tags need to be recast into the vocabulary of the viewer.
+				 * If the viewer's tags don't include a particular sender tag, add the user name of the tagger into the tag text
+				 * separated by a colon or in parens or something. Maybe a situational link to add this to the viewer's tagset can
+				 * be provided.
+				*/
+				$terms = squawk_fetch_user_tags($user->uid);	
+				$options = array();
+				//make sure it has a value. It should have.
+				if(!empty($terms)) {
+					foreach($terms['tag_set'] as $term) {
+						//build the options array for the checkboxes control
+						$options[$term->tid] = $term->name;
+					}
+				}
+				$source = squawk_fetch_tag_list($form['field_tags']['und']['#default_value']);
+				$result = squawk_compare_tag_lists($options, 
+					$source, $author['human_name']);
+				//$form['field_tags']['#disabled'] = FALSE;
+				$form['field_tags']['und']['#options'] = $options + $result['residue'];
+				dsm($result);
+				//default value is just an array of the keys
+				$form['field_tags']['und']['#default_value'] = array_keys($result['intersection'] + $result['residue']);
+			unset($form['actions']['delete']);
+			break;
+			default:
+				drupal_set_message('This is an error condition. If you see this let tom b know.', 'error');
+		}
+		//rename the submit button
+		$form['actions']['submit']['#value'] = t('Tell It!');
+		//Add the bonus receivers fieldset
+		$form['bonus_receivers'] = array(
+			'#type' => 'fieldset',
+			'#title' => t('Copy this to my (other):'),
+			'#collapsible' => TRUE,
+			'#collapsed' => TRUE,
+			'#weight' => 50,
+		);
+		//get the lists of peers, leads, and reports the author has
+		$peers = squawk_relationships($user->uid,'peers','human');
+		$leads = squawk_relationships($user->uid,'leads','human');
+		$reports = squawk_relationships($user->uid,'reports','human');
+		if(!empty($peers)) {
+			$form['bonus_receivers']['peers'] = array(
+				'#type' => 'tableselect',
+				'#multiple' => TRUE,
+				'#header' => array('human_name' => 'Peers'),
+				'#options' => $peers,
+				'#weight' => 3,
+			);
+		}
+		if(!empty($leads)) {
+			$form['bonus_receivers']['leads'] = array(
+				'#type' => 'tableselect',
+				'#multiple' => TRUE,
+				'#header' => array('human_name' => 'Leaders'),
+				'#options' => $leads,
+				'#weight' => 1,
+			);
+		}
+		if(!empty($reports)) {
+			$form['bonus_receivers']['reports'] = array(
+				'#type' => 'tableselect',
+				'#multiple' => TRUE,
+				'#header' => array('human_name' => 'Direct Reports'),
+				'#options' => $reports,
+				'#weight' => 2,
+			);
+		}
+		$form['bonus_receivers']['self'] = array(
+			'#type' => 'checkbox',
+			'#title' => 'Self',
+			'#weight' => 4,
+		);
+	}
+
+}
+/*
+ * Implements hook_node_validate
+ */
+function squawk_node_validate($node, $form, &$form_state) {
+
+   switch($form_state['open_mode']) {
+    case 'edit':
+      //append the original stuff to the body
+      $form_state['values']['body']['und'][0]['value'] = $form_state['values']['body']['und'][0]['value'] . '...so there edit...';
+    break;
+    case 'add': 
+      //append the original stuff to the body
+      $form_state['values']['body']['und'][0]['value'] = $form_state['values']['body']['und'][0]['value'] . '...so there add...';    
+    break;
+    default:
+      drupal_set_message('Something went wrong with saving the node. Please report this.', 'error');
+  }
+  //dsm($form);
+  //dsm($form_state);
+  //dsm('this is a validate function');
+}
+function update_node_form_submit($form, &$form_state) {
+
+  dsm('hello from update_node_form_submit');
+  $form_state['redirect'] = 'channels/' . $form_state['values']['field_recipient']['und'][0]['value'];
+}
+function squawk_node_presave($node) {
+  //dsm($node);
+}
+function squawk_format_user($uid) {
+	// returns an array with the main key is the uid and has some formatted stuff for
+	// list items
+	$u=user_load($uid);
+	if (!$u->field_first_name || !$u->field_last_name || !$u->field_department) {
+		$display_name = $u->name;
+		$dept = 'Student Affairs';
+	}
+	else {
+		$fname=$u->field_first_name['und'][0]['value'];
+		$lname=$u->field_last_name['und'][0]['value'];
+		$dept=$u->field_department['und'][0]['value'];
+		$display_name = $fname . ' ' . $lname;
+	}
+	$pic = theme('user_picture', array('account' => $u));
+	
+	
+  //$pic = theme('image_style', array('path' => $pic_path, 'style_name' => 'thumbnail'));
+	$attributes = array( 
+		'attributes' => array( 
+			'id' => 'user-' . $u->uid,
+			'class'=>array('user-link',),
+			)
+	);
+	
+	//$output['data'] = $pic . l($display_name,'user/' . $u->uid, $attributes)
+	//	. "<span class='ui-li-count department' >" . $dept . "</span>";
+	//dsm($output);
+  $dname = '<span>' . $display_name . '</span>';
+	$department = "<span class='ui-li-count department' >" . $dept . "</span>";
+	$html_blob = $pic . $dname . $department;
+	$the_link = array(
+		'#theme' => 'link',
+		'#text' => $html_blob,
+		'#path' => 'channels/' . $u->uid,
+		'#options' => array(
+			'attributes' => array(
+				'id' => 'user-' . $u->uid,
+				'class' => array('user-link',),
+			),
+			'html' => TRUE,
+		),
+	);
+	$output['data'] = drupal_render($the_link);
+	return $output;
+}
+function squawk_relationships_themed($reltype) {
+	global $user;
+	$u=user_load($user->uid);
+	if (!$u->field_first_name) { 
+		$display_name = $u->name;
+	}
+	else {
+		$display_name = $u->field_first_name['und'][0]['value'];
+	}
+	$relations = squawk_relationships($user->uid,$reltype);
+	//dsm($relations);
+	//test for zero and make some messages based on it. I don't know how to do this yet.
+	$variables = array(
+		'items'=> $relations,
+		'type' => 'ul',
+		'title' => $display_name . "'s " . $reltype,
+		'attributes' =>  array(
+			'id' => $reltype . '-' . $u->name,
+			'class' => array('ui-listview', $reltype,),
+			'data-role' => 'listview',
+			),
+	);	
+	return theme_item_list($variables);
+}
+
+function squawk_relationships($uid, $reltype,$style='link') {
+	//if no reltype is given pick 'peers'
+	$relations = array();
+	switch ($reltype) {
+		case 'peers':
+			// Returns an array of user ids that report to the same uid that
+			// $uid reports to. Here, report means that $uid is the requestee_id
+			// of an approved 'lead' relationship type. The requester_id of that type is the 
+			// 'lead', the uid they report to.
+			//user relationships api provides some handy functions here.
+			//get $uid's lead
+			$leads = user_relationships_load(array('requestee_id'=>$uid,'rtid'=>1));
+			foreach ($leads as $lead) {
+				foreach($lead as $key=>$value) {
+					if ($key == 'requester_id') {
+						//$peerset = user_relationships_load(array('requester_id' => $value), array('include_user_info'=>TRUE));
+						$peerset = user_relationships_load(array('requester_id' => $value));
+						//now mess with the peers
+						foreach ($peerset as $peer) {
+							foreach ($peer as $peerkey => $peervalue) {
+								if ($peerkey == 'requestee_id') {
+									// remove the $uid from the peer list
+									if($peervalue != $uid) {
+										if($style == 'human') {
+											$relations[$peervalue] = squawk_human_name($peervalue);
+										}
+										else {
+											$relations[$peervalue] = squawk_format_user($peervalue);
+										}
+									}
+								}			
+							}
+						}
+					}
+				}
+			}
+			break;
+		case 'leads':
+			$leads = user_relationships_load(array('requestee_id'=>$uid,'rtid'=>1));
+			foreach ($leads as $lead) {
+				foreach($lead as $key=>$value) {
+					if ($key == 'requester_id') {
+//						$relations[$value] = squawk_format_user($value);
+						if($style == 'human') {
+							$relations[$value] = squawk_human_name($value);
+						}
+						else {
+							$relations[$value] = squawk_format_user($value);
+						}
+					}
+				}
+			}
+			break;
+		case 'reports':
+			$reports = user_relationships_load(array('requester_id'=>$uid,'rtid'=>1));
+			foreach ($reports as $report) {
+				foreach($report as $key=>$value) {
+					if ($key == 'requestee_id') {
+//						$relations[$value] = squawk_format_user($value);
+						if($style == 'human') {
+							$relations[$value] = squawk_human_name($value);
+						}
+						else {
+							$relations[$value] = squawk_format_user($value);
+						}
+					}
+				}
+			}
+			break;
+		case 'self':
+			$self = $uid;
+//			$relations[$self] = squawk_format_user($self);
+			if($style == 'human') {
+				$relations[$self] = squawk_human_name($self);
+			}
+			else {
+				$relations[$self] = squawk_format_user($self);
+			}
+			break;
+		//default:
+	}
+	return $relations;
+}
+/* 
+ * implements hook_user_update
+ */
+function squawk_user_update(&$edit) {
+	// $edit is the user account that has just been updated.
+	// this fires on login for some reason I don't understand yet. It exits to keep blank usernames from 
+	// getting a vocabulary entry
+	//dsm($edit);
+	if (!isset($edit->name)) {
+		return;
+	}
+	$username = $edit['name'];
+	//add a vocabulary with the name user_squawk_tags
+	if (module_exists('taxonomy')) {
+		// Check to see if the vocabulary already existed (i.e. from a previous installation).
+		$already_exists = db_query("SELECT vid, name FROM {taxonomy_vocabulary} WHERE module = 'squawk' AND
+			machine_name = 'squawk_tags'")->fetchObject();
+		if (empty($already_exists)) {
+			//create the vocabulary
+			// Create a default vocabulary for use with hashtags.
+			$vocabulary = (object) array(
+				'name' => t('Squawk Tags'),
+				'machine_name' => 'squawk_tags',
+				'description' => t('Contains Navigation and filtering tags used in Squawk Statuses.'),
+				'hierarchy' => 1,
+				'module' => 'squawk',
+				'weight' => 0,
+			);
+		taxonomy_vocabulary_save($vocabulary);
+		$vid = isset($vocabulary->vid) ? $vocabulary->vid :
+			db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'")->fetchField();
+		}
+		//now see if the username base term exists
+		$already_exists = db_query("SELECT a.vid, a.name as term FROM {taxonomy_term_data} a INNER JOIN {taxonomy_vocabulary} t ON a.vid = t.vid WHERE a.name ='" . $username . "' AND t.machine_name = 'squawk_tags'")->fetchObject();
+		if (!empty($already_exists)) {
+			//variable_set('statuses_tags_vid', $already_exists->vid);
+			drupal_set_message(t('The base term "@term" in Squawk Tags has been already configured for use.', 
+				array('@term' => $already_exists->term, )));
+			return;
+		}
+		$vid = db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'"
+			)->fetchField();
+		//seed the vocabulary with some basic terms for the parent term 
+		$term = new stdClass();
+		$term->name = $username;
+		$term->vid = $vid;
+		$term->parent = 0;
+		taxonomy_term_save($term);
+		//need the tid for this term b/c it is the parent for the following terms
+		$base_tid = $term->tid;
+		$default_tags=array('Recruiting','Admissions','Data','Financial Aid',);
+		foreach($default_tags as $value) {
+			$term = new stdClass();
+			$term->name = $value;
+			$term->vid = $vid;
+			$term->parent = $base_tid;
+			taxonomy_term_save($term);
+		}
+		drupal_set_message(t('The base term for username "' . $username . '" has been created and configured in Squawk Tags.'));
+	}
+	else {
+		drupal_set_message(t('Squawk only allows using tags when the Taxonomy module is installed.'));
+	}
+}
+/*
+ * implements hook_user_insert
+ */
+function squawk_user_insert(&$edit) {
+	// $edit is the user account that has just been updated. 
+	//dsm( ' I am in User Insert Hook ' . $edit);
+	$username = $edit['name'];
+	//add a vocabulary with the name user_squawk_tags
+	if (module_exists('taxonomy')) {
+		// Check to see if the vocabulary already existed (i.e. from a previous installation).
+		$already_exists = db_query("SELECT vid, name FROM {taxonomy_vocabulary} WHERE module = 'squawk' AND
+			machine_name = 'squawk_tags'")->fetchObject();
+		if (empty($already_exists)) {
+			//create the vocabulary
+			// Create a default vocabulary for use with hashtags.
+			$vocabulary = (object) array(
+				'name' => t('Squawk Tags'),
+				'machine_name' => 'squawk_tags',
+				'description' => t('Contains Navigation and filtering tags used in Squawk Statuses.'),
+				'hierarchy' => 1,
+				'module' => 'squawk',
+				'weight' => 0,
+			);
+		taxonomy_vocabulary_save($vocabulary);
+		$vid = isset($vocabulary->vid) ? $vocabulary->vid :
+			db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'")->fetchField();
+		}
+		//now see if the username base term exists
+		$already_exists = db_query("SELECT a.vid, a.name as term FROM {taxonomy_term_data} a INNER JOIN {taxonomy_vocabulary} t ON a.vid = t.vid WHERE a.name ='" . $username . "' AND t.machine_name = 'squawk_tags'")->fetchObject();
+		if (!empty($already_exists)) {
+			//variable_set('statuses_tags_vid', $already_exists->vid);
+			drupal_set_message(t('The base term "@term" in Squawk Tags has been already configured for use.', 
+				array('@term' => $already_exists->term, )));
+			return;
+		}
+		$vid = db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'"
+			)->fetchField();
+		//seed the vocabulary with some basic terms for the parent term 
+		$term = new stdClass();
+		$term->name = $username;
+		$term->vid = $vid;
+		$term->parent = 0;
+		taxonomy_term_save($term);
+		//need the tid for this term b/c it is the parent for the following terms
+		$base_tid = $term->tid;
+		$default_tags=array('Recruiting','Admissions','Data','Financial Aid',);
+		foreach($default_tags as $value) {
+			$term = new stdClass();
+			$term->name = $value;
+			$term->vid = $vid;
+			$term->parent = $base_tid;
+			taxonomy_term_save($term);
+		}
+		drupal_set_message(t('The base term for username "' . $username . '" has been created and configured in Squawk Tags.'));
+	}
+	else {
+		drupal_set_message(t('Squawk only allows using tags when the Taxonomy module is installed.'));
+	}
+}
+/*
+ * implements hook node info
+ */
+function squawk_node_info() {
+	//defining the squawk update node type
+	$squawk_update = array(
+		'squawk_update' => array(
+			'name' => t('Squawk Update'),
+			'base' => 'squawk_update',
+			'description' => t('Brief updates on what is new in student affairs.'),
+			'help' => t('To add an update to a profile, just type it, tag it, and tell it!'),
+			'has_title' => FALSE,
+			'locked' => FALSE,
+		),
+	);
+	return $squawk_update;
+}
+
+/*
+ * implements hook_user_view
+
+function squawk_user_view($account, $view_mode) {
+    //dsm($account);
+	global $user;
+	$output = squawk_fetch_updates($user->uid, $account->uid);
+	$markup = drupal_render($output);
+	//dsm(request_path());  //returns nothing b/c /user is the default front page (aliased path)
+	//dsm(current_path());  //returns user/4 b/c this is the unaliased path
+	$account->content['squawk'] = array(
+		'#prefix' => '<div class="squawk-updates" id="squawk-updates">',
+		'#suffix' => '</div>',
+		'#type' => 'user_profile_item',
+		'#title' => t('Updates'),
+		'#markup' => $markup,
+		'#weight' => 5,
+	);
+	//dsm($account);
+}
+ */
+function squawk_propagate_update($node, $reltype) {
+  global $user;
+  $relations = squawk_relationships($user->uid,$reltype);
+  //dsm($relations);
+  //dsm($node);
+  if (count($relations) > 0) {
+    foreach ($relations as $key=>$value) {
+		//each of the members of the array is a valid user. The uid is the $key and a link to the page is in the value array.
+		  //here we just need the key.
+		  //prepare the new node for saving.
+		$copy = new stdClass();
+		$copy->type = 'squawk_update';
+		node_object_prepare($copy);
+		$copy->language = $node->language;
+		$copy->comment = $node->comment;
+		//set the values
+		$copy->field_squawk_recipient[$node->language][0]['value'] = $key;
+		if(!isset($node->field_squawk_tags[$node->language])) {
+			$tid_count = 0;
+		}
+		else {
+			$tid_count = count($node->field_squawk_tags[$node->language]);
+		}
+		for ($i=0; $i<$tid_count - 1; $i++){
+			$copy->field_squawk_tags[$node->language][$i]['tid'] = $node->field_squawk_tags[$node->language][$i]['tid'];
+		}
+		}
+		$copy->body[$node->language][0]['value'] = $node->body[$node->language][0]['value'];
+		$copy->field_squawk_private[$node->language][0]['value'] = $node->field_squawk_private[$node->language][0]['value'];
+		node_save($copy);
+		if (isset($copy->nid)) { 
+			//the save completed . I put this here as a dummy statement.
+			dsm('Update posted to user ' . $key . '.');
+		}
+	}
+	return;
+}
+/*
+ *	squawk_fetch_updates($user)
+ */
+function squawk_fetch_updates($viewer_uid, $recipient_uid) {
+  //function returns a render array.
+	/*
+	 * There are two cases. viewer and recipient are the same. load all the messages private and normal.
+	 * View and recipient are different. Load all normal and only those marked private where author is viewer.
+	 */
+	
+	$viewer = user_load($viewer_uid);
+	$recipient = user_load($recipient_uid);
+	//this is the main driver for getting the right nids
+	$query = new EntityFieldQuery;
+	$base_query = $query -> entityCondition('entity_type', 'node')
+		-> entityCondition('bundle', 'update')
+//		-> fieldCondition('field_squawk_recipient', 'value', $recipient_uid)
+		-> fieldCondition('field_recipient', 'value', $recipient_uid)
+		-> propertyOrderBy('created', 'DESC');
+	$nids = array();
+	if( $viewer_uid==$recipient_uid) {
+			//show everything. No restriction on private or normal confidentiality.
+			$results = $base_query -> execute();
+			if (isset($results['node'])) {
+				$nids = array_keys($results['node']);
+			}
+	}
+	else {
+			//show all normal and only the private ones where the author is the same as the viewer.
+			$normal_part = $base_query; 
+			$normal_results = $normal_part-> fieldCondition('field_private', 'value', FALSE)-> execute();
+			$private_part = new EntityFieldQuery;
+			$private_results = $private_part
+				-> entityCondition('entity_type', 'node')
+				-> entityCondition('bundle', 'update')
+				-> fieldCondition('field_recipient', 'value', $recipient_uid)
+				-> propertyOrderBy('created', 'DESC')
+				->fieldCondition('field_private', 'value', TRUE)
+				->propertyCondition('uid', $viewer_uid, '=')
+				->execute();
+			$a = array();
+			if (isset($normal_results['node'])) {
+				$a = array_keys($normal_results['node']);
+			}
+			$b = array();
+			if (isset($private_results['node'])) {
+				$b = array_keys($private_results['node']);
+			}
+			$nids = array_unique(array_merge($a, $b));
+			//dsm($normal_results);
+			//dsm($private_results);
+	}
+		//-> fieldCondition('field_private', 'value', FALSE)			
+
+	if(empty($nids)) {
+		//no records were returned. send a message.
+		$message = 'There were no updates to return for this particular user.';
+		drupal_set_message($message, 'status');
+		return;
+	}
+	//load the nids and the relevant users
+	$nodes = node_load_multiple($nids);
+	//$viewer = user_load($viewer_uid);
+	//$recipient = user_load($recipient_uid);
+	//show the nids
+	$output = node_view_multiple($nodes, 'squawk_teaser');
+	return $output;
+}
+ 
+ 
+function squawk_open_update($context, $action) {
+	//dsm('hi');
+	//$u = user_load($destination_user);
+	//return user_view($u);
+//	return drupal_get_form('test_update_node_form',$destination_user);
+	global $user;
+	if($action == 'edit') {
+		//in this context the $context is a node, not a user
+		$node = node_load($context);
+		$form_state['build_info']['args'] = array($node, $action);
+		form_load_include($form_state, 'inc', 'node', 'node.pages');
+		return drupal_build_form('update_node_form', $form_state);
+	}
+	if ($action == 'add') {
+		$node = (object) array('uid' => $user->uid, 
+			'name' => (isset($user->name) ? $user->name : ''), 
+			'type' => 'update', 
+			'language' => LANGUAGE_NONE,
+		);
+		$form_state['build_info']['args'] = array($node,$context,$action);
+		form_load_include($form_state, 'inc', 'node', 'node.pages');
+		return drupal_build_form('update_node_form', $form_state);
+	}
+}
+function squawk_back($node) {
+	//I think the menu item issues a node load for the given node. so it should be loaded and ready to use
+	$uid = $node->field_recipient[$node->language][0]['value'];
+	//drupal_goto('user/' . $uid);
+	drupal_goto('channels/' . $uid);
+}
+/*
+ * Implements hook_permission
+ */
+function squawk_permission() {
+	return array(
+		'edit own profile' => array(
+			'title' => t('Edit own profile'),
+			'description' => t('User can change settings and upload a picture'),
+		),
+	);
+}
+function squawk_access_edit_settings($uid) {
+	global $user;
+	$access_granted = FALSE;
+	if ($user->uid == $uid && user_access('edit own profile')) {
+		$access_granted = TRUE;
+	}
+	return $access_granted;
+}
+function squawk_user_options_form($form, &$form_state) {
+	dsm('hello world from squawk user options form');
+	  //jquery mobile attachments
+  $jqm = array(
+    'js' => array (
+      'sites/all/libraries/jquery-1.8.0/jquery-1.8.0.min.js' => array(
+        'type' => 'file',
+      ),
+      'sites/all/libraries/jquery.mobile-1.1.1/jquery.mobile-1.1.1.min.js' => array(
+        'type' => 'file',
+      ),
+    ),
+    'css' => array (
+      'sites/all/libraries/jquery.mobile-1.1.1/jquery.mobile-1.1.1.min.css' => array(
+        'type' => 'file',
+      ),
+    ),
+  );
+	global $user;
+	$account = $form['#user'];
+	$options = array(
+		'date' => 'Date/Time (Newest to Oldest)',
+		'content' => 'Content Tags',
+		'person' => 'Person (A - Z)',
+		'random' => 'Random order',
+	);
+	$form['sort_options'] = array(
+		'#type' => 'fieldset',
+		'#weight' => 2,
+		'#collapsible' => TRUE,
+		'#collapsed' => TRUE,
+		'#title' => t('Sort Options'),
+	);
+	$form['sort_options']['first_key']= array(
+		//'#attached' => $jqm,
+		'#type' => 'select',
+		'#title' => t('Sort by...'),
+		'#options' => $options,
+		'#default_value' => 'date',
+		'#multiple' => FALSE,
+		'#required' => TRUE,
+	);
+	$form['sort_options']['second_key'] = array(
+		'#type' => 'select',
+		'#title' => t('And then by...'),
+		'#options' => $options,
+		'#default_value' => 'content',
+		'#multiple' => FALSE,
+		'#required' => FALSE,
+	);
+	$form['sort_options']['third_key'] = array(
+			'#type' => 'select',
+		'#title' => t('And then by...'),
+		'#options' => $options,
+		'#default_value' => 'person',
+		'#multiple' => FALSE,
+		'#required' => FALSE,
+	);
+  // Picture/avatar.
+  $form['picture'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Picture'),
+    '#weight' => 1,
+  );
+  $form['picture']['picture'] = array(
+    '#type' => 'value',
+    '#value' => isset($account->picture) ? $account->picture : NULL,
+  );
+  $form['picture']['picture_current'] = array(
+    '#markup' => theme('user_picture', array('account' => $account)),
+  );
+  $form['picture']['picture_delete'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Delete picture'),
+    '#access' => !empty($account->picture->fid),
+    '#description' => t('Check this box to delete your current picture.'),
+  );
+  $form['picture']['picture_upload'] = array(
+    '#type' => 'file',
+    '#title' => t('Upload picture'),
+    '#size' => 48,
+    '#description' => t('Your virtual face or picture. Pictures larger than @dimensions pixels will be scaled down.', array('@dimensions' => variable_get('user_picture_dimensions', '85x85'))) . ' ' . filter_xss_admin(variable_get('user_picture_guidelines', '')),
+  );
+	$form['#validate'][] = 'user_validate_picture';
+	
+	$form['submit'] = array(
+		'#type' => 'submit',
+		'#value' => t('Save'),
+		'#weight' => 3,
+	);
+	return $form;
+}
+function squawk_user_options_form_submit(&$form_state) {
+	dsm('hello world');
+	return;
+}
+function squawk_human_name($uid) {
+	$u = user_load($uid);
+	if (!$u->field_first_name || !$u->field_last_name) {
+		$display_name = $u->name;
+	}
+	else {
+		$fname=$u->field_first_name['und'][0]['value'];
+		$lname=$u->field_last_name['und'][0]['value'];
+		$display_name = $fname . ' ' . $lname;
+	}
+	return array('human_name'=>$display_name);
+}
+function squawk_fetch_user_tags($uid) {
+	$user=user_load($uid);
+	//load the user specific tags from squawk_tags
+	//dont assume the vid just in case ...
+	$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+	//the current user's tags all have the username as the parent tid.
+	$query = new EntityFieldQuery;
+	$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+		->propertyCondition('name', $user->name)
+		->propertyCondition('vid', $vocabulary->vid)
+		->execute();
+		//make sure it has a value. It should have.
+		$terms=array();
+		if(isset($entities['taxonomy_term'])) {
+			$user_tid = array_keys($entities['taxonomy_term']);
+			$terms['parent'] = taxonomy_term_load($user_tid[0]);
+			$terms['tag_set'] = taxonomy_get_tree($vocabulary->vid,$user_tid[0],NULL,TRUE); //load the full on entities
+		}
+	return $terms;
+}
+function squawk_fetch_tag_list($tag_array) {
+	$list = array();
+	$result = taxonomy_term_load_multiple($tag_array);
+	//dsm($result);
+	foreach($result as $term) {
+		$list[$term->tid]=$term->name;
+	}
+	//dsm($list);
+	return $list;
+}
+function squawk_compare_tag_lists($target, $source, $affix = NULL) {
+	
+	$result['intersection'] = array();
+	$result['residue'] = array();
+	if(!$source) {
+		return $result;
+	}
+	foreach($source as $skey=>$svalue) {
+		$no_match = TRUE;
+		foreach($target as $tkey=>$tvalue) {
+			if(strtolower($tvalue) == strtolower($svalue)) {
+				//match
+				$no_match = FALSE;
+				$result['intersection'][$tkey] = $tvalue;
+			}
+		}
+		if($no_match) {
+			$result['residue'][$skey] = $svalue;
+			if($affix) {
+				$result['residue'][$skey] = $svalue . ' (' . $affix . ')';
+			}
+		}
+	}
+	return $result;
+}
+function squawk_compare_user_tags($target_set, $source_set) {
+	$result['target_set'] = $target_set;
+	$result['source_set'] = $source_set;
+	$result['intersection'] = array();
+	$result['residue'] = array();
+	//for each member of the first tagset, compare the text to the second. if there is a match,
+	//add the target member to the array that will become the intersection.
+	//if there is no match, add the source term to the array that will become the residue
+	foreach ($source_set['tag_set'] as $source_obj) {
+		//dsm($target_obj);
+		$no_match = TRUE;
+		foreach($target_set['tag_set'] as $target_obj) {
+			//dsm($source_obj);
+			if(strtolower($target_obj->name) == strtolower($source_obj->name) && 
+					$target_obj->field_active['und'][0]['value'] == TRUE) {
+						//got a match
+						//dsm('ding');
+						$result['intersection'][$target_obj->tid] = $target_obj->name;
+						$no_match = FALSE;
+			}
+		}
+
+		if ($no_match) {
+			$result['residue'][$source_obj->tid]= $source_set['parent']->name . ": " . $source_obj->name;
+		}
+	}
+	//dsm($result);
+	return $result;
+}
+/**
+* Implements hook_entity_info_alter().
+*/
+function squawk_entity_info_alter(&$entity_info) {
+	$entity_info['node']['view modes']['squawk_teaser'] = array(
+		'label' => t('Squawk Teaser'),
+		'custom settings' => TRUE,
+	);
+	$entity_info['user']['view modes']['contact_card'] = array(
+		'label' => t('Contact Card'),
+		'custom settings' => TRUE,
+	);
+} 
+/*
+ * node edit title callback
+ */
+function squawk_node_edit_title_callback($title_string) {
+	//dsm(arg());
+	$args = arg(); //0 is 'node', 1 is nid.
+	$node = node_load($args[1]);
+	global $user;
+	if ($user->uid == $node->uid) {
+		$title = 'Edit/Forward';
+	}
+	else {
+		$title = 'Update/Forward';
+	}
+	return $title;
+}
+/**
+ * Implementation of hook_field_formatter_info().
+ */
+function squawk_field_formatter_info() {
+  return array(
+    'user_aware_terms' => array(
+      'label' => t('User-aware terms'),
+      'field types' => array('taxonomy_term_reference'),
+    ),
+  );
+}
+/**
+ * Implements hook_field_formatter_view().
+ */
+function squawk_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+	$element = array();
+	//dsm($entity_type);  <--this returns 'node'
+	//dsm($entity); <--and this returnst THE NODE !
+	//dsm($instance); <--this returns the field info from the node
+	$tids = array();
+	switch ($display['type']) {
+    //I have to load the terms myself. $items is an array of arrays (('tid'=>###), etc.)...
+    case 'user_aware_terms':
+		foreach($items as $tidarray) {
+			$tids[]=$tidarray['tid'];
+		}
+		$node_tags = squawk_fetch_tag_list($tids);
+		//get the node recipient from the node in question
+		$context = $entity->field_recipient['und'][0]['value'];
+		global $user;
+		if ($context == $user->uid) {
+			$context_tag_title = 'Your Tags';
+		}
+		else {
+			$recipient = squawk_human_name($context);
+			$context_tag_title = $recipient['human_name'] . '\'s Tags';
+		}
+		$recipient = squawk_human_name($context);
+		$terms = squawk_fetch_user_tags($context);
+		$user_tags = array();
+		//make sure it has a value. It should have.
+		if(!empty($terms)) {
+			foreach($terms['tag_set'] as $term) {
+				//build the options array for the checkboxes control
+				$user_tags[$term->tid] = $term->name;
+			}
+		}
+		//dsm($user_tags);
+		//dsm($node_tags);
+		$result = squawk_compare_tag_lists($user_tags, $node_tags);
+		//first display the tags that are in the recipient's tags $result['intersection']
+		//then display the tags that are not in the recipient's tagset $result['residue']
+		$test = array(
+			'#theme' => 'item_list',
+			'#items' => array(
+				array( $context_tag_title,
+					'children' => $result['intersection'],
+					'class' => array('recipient-tags', 'tags', 'squawk-tags'),
+				),
+				array( 'Other Tags',
+					'children' => $result['residue'],
+					'class' => array('other-tags', 'tags', 'squawk-tags'),
+				),
+			),	
+			'#type' => 'ul',
+			'#title' => 'Organizing/Content Tags',
+			'#attributes' => array(
+				'class' => array('ui-listview', 'recipient'),
+				'data-role' => 'listview',
+			),
+		);	
+		$element = $test;	
+	  break;
+  }
+  return $element;
+}
+/*
+ * implements hook_node_view
+ */
+function squawk_node_view($node, $view_mode, $langcode) {
+
+	//dsm( date('r',node_last_viewed($node->nid)));
+
+	if ($node->type == 'update' && $view_mode == 'squawk_teaser') {
+		$node_title_stripped = strip_tags($node->title);
+		//add the read more link
+		$link = array(
+			'#theme' => 'link',
+			'#text' => t('Read more<span class="element-invisible"> about @title</span>', array('@title' => $node_title_stripped)),
+			'#path' => 'node/' . $node->nid,
+			'#options' => array(
+				'attributes' => array(
+					'class' => array('cool-class'), 
+					'id' => 'cool-id',
+					'rel' => 'tag', 
+					'title' => $node_title_stripped,
+				),
+				  //REQUIRED:
+				'html' => TRUE,
+			),
+			'#weight' => 4,
+		);
+		$node->content['node-readmore'] = $link;
+		$links['node-link-readmore'] = array(
+			'title' => t('Read more<span class="element-invisible"> about @title</span>', array('@title' => $node_title_stripped)),
+			'href' => 'node/' . $node->nid,
+			'html' => TRUE,
+			'attributes' => array('rel' => 'tag', 'title' => $node_title_stripped),
+		);
+/*		$node->content['links']['node'] = array(
+			'#theme' => 'links__node__node',
+			'#links' => $links,
+			'#attributes' => array('class' => array('links', 'inline')),
+		);
+*/
+		//mess with the weights
+		//$node->content['links']['#weight'] = 2;
+		$node->content['field_tags']['#weight'] = 5;
+		//add the new/update mark
+		$node->content['new_mark'] = array(
+			'#markup' => theme('mark', array('type' => node_mark($node->nid, $node->changed))),
+			//'#markup' => theme('mark', array('type' => MARK_UPDATED)),
+			'#weight' => -1,
+		);
+		//add the user picture. Use the curent uer right now just to see if it works at all
+		$node_author = user_load($node->uid);
+		$image = theme('user_picture', array('account' => $node_author));
+		$node->content['author_picture'] = array(
+		'#markup' => $image,
+			'#weight' => 2,
+		);
+	}
+	//dsm($node);	
+}
+/*
+ * implements hook_field_extra_fields
+ */
+function squawk_field_extra_fields() {
+	$extra['node']['update']['display'] = array(
+		'new_mark' => array(
+			'label' => 'New/Updated node mark',
+			'description' => t('The little colored "new" or "updated" word that tells a user there is new content.'),
+			'weight' => 12,
+		),
+		'node_readmore' => array(
+			'label' => 'Read more link',
+			'description' => t('Appears in teaser mode.'),
+			'weight' => 10,
+		),
+		'author_picture' => array(
+			'label' => 'Author\'s picture from profile.',
+			'description' => t('The picture the user uploaded or the default pic.'),
+			'weight' => 4,
+		),
+	);
+	$extra['user']['user']['display'] = array(
+		'contact_card' => array(
+			'label' => 'User Picture',
+			'description' => t('Uploaded or Default Picture'),
+			'weight' => 3,
+		),
+	);
+			
+	return $extra;
+}
+function squawk_preprocess_user_picture(&$variables) {
+	//dsm($variables);
+  if (variable_get('user_pictures', 0)) {
+    $account = $variables['account'];
+    if (!empty($account->picture)) {
+      // @TODO: Ideally this function would only be passed file objects, but
+      // since there's a lot of legacy code that JOINs the {users} table to
+      // {node} or {comments} and passes the results into this function if we
+      // a numeric value in the picture field we'll assume it's a file id
+      // and load it for them. Once we've got user_load_multiple() and
+      // comment_load_multiple() functions the user module will be able to load
+      // the picture files in mass during the object's load process.
+      if (is_numeric($account->picture)) {
+        $account->picture = file_load($account->picture);
+      }
+      if (!empty($account->picture->uri)) {
+        $filepath = $account->picture->uri;
+      }
+    }
+    elseif (variable_get('user_picture_default', '')) {
+      $filepath = variable_get('user_picture_default', '');
+    }
+    if (isset($filepath)) {
+      $alt = t("@user's picture", array('@user' => format_username($account)));
+      // If the image does not have a valid Drupal scheme (for eg. HTTP),
+      // don't load image styles.
+      if (module_exists('image') && file_valid_uri($filepath) && $style = variable_get('user_picture_style', '')) {
+        $variables['user_picture'] = theme('image_style', array('style_name' => $style, 'path' => $filepath, 'alt' => $alt, 'title' => $alt));
+      }
+      else {
+        $variables['user_picture'] = theme('image', array('path' => $filepath, 'alt' => $alt, 'title' => $alt));
+      }
+	}
+}
+}
+/**
+ * Menu item title callback - use the user name.
+ */
+function squawk_channels_page_title($account) {
+  return is_object($account) ? format_username($account) . '\'s Update Channel' : '';
+}
+function squawk_username_alter(&$name, $account) {
+/* load the full user object, since $account not always provide all informations */  
+	$user = user_load($account->uid);
+	if (!empty($user->field_first_name) && !empty($user->field_last_name)) {
+		$name = $user->field_first_name['und'][0]['value'] . ' ' . $user->field_last_name['und'][0]['value'];
+	}
+}
+function squawk_preprocess_username(&$variables) {
+	//dsm($variables);
+	$variables['link_path'] = 'channels/' . $variables['uid'];
+}
+function squawk_frontpage() {
+	global $user;
+	if($user->uid > 0) {
+		drupal_goto('channels/' . $user->uid);
+	}
+	else {
+		drupal_goto('user/login');
+	}
+}

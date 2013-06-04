@@ -1,0 +1,58 @@
+/* This file will hold styles that are loaded using the same media query as the normal grid. */
+/* If you are using the default media queries provided by Omega, these styles will also
+ *  apply to the widescreen layout unless they are overridden by the widescreen styles. */
+
+/***********************************
+        UA LOGO COLORS
+************************************/
+a#ua_link {
+  height: 100%;
+  width: 50%;
+  float: left;
+  margin: 0;
+  display: block;
+  cursor: pointer;
+}
+
+/* blue logo */
+#ua_link.logo_blue {
+  background: url(../images/a-line-blue-transp.png) 1em .5em no-repeat transparent;
+}
+
+/* red logo */
+#ua_link.logo_red {
+  background: url(../images/a-line-red-transp.png) 1em .5em no-repeat transparent;
+}
+
+/* white logo */
+#ua_link.logo_white {
+  background: url(../images/a-line-white-transp.png) 1em .5em no-repeat transparent;
+}
+
+/***********************************
+      Normal-specific
+************************************/
+
+
+
+/***********************************
+      Normal-specific BLOCKS
+************************************/
+#zone-menu ul.nice-menu li,
+#zone-menu ul.main-menu li {
+    float: left;
+}
+
+
+/***********************************
+      Normal-specific REGIONS
+************************************/
+
+
+
+/***********************************
+      Normal-specific CLASSES
+************************************/
+#section-content .height-500 {
+  min-height: 500px;
+}

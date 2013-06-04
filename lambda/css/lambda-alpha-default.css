@@ -1,0 +1,45 @@
+/* This file will hold styles for all layouts using the alpha grid (i.e. not the mobile layout). */
+/* This file will hold styles that are loaded using the same media query as the narrow grid. */
+
+/***********************************
+        Regions
+************************************/
+#region-menu {
+    position: relative;
+}
+
+#zone-menu ul.nice-menu li {
+    float: none;
+}
+
+
+/***********************************
+      Default-specific BLOCKS
+************************************/
+
+/***********************************
+        UA LOGO COLORS
+************************************/
+a#ua_link {
+  height: 100%;
+  width: 100%;
+  float: left;
+  margin: 0;
+  display: block;
+  cursor: pointer;
+}
+
+/* blue logo */
+#ua_link.logo_blue {
+  background: url(../images/a-line-blue-transp-small.png) 1em .5em no-repeat transparent;
+}
+
+/* red logo */
+#ua_link.logo_red {
+  background: url(../images/a-line-red-transp-small.png) 1em .5em no-repeat transparent;
+}
+
+/* white logo */
+#ua_link.logo_white {
+  background: url(../images/a-line-white-transp-small.png) 1em .5em no-repeat transparent;
+}

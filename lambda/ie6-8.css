@@ -1,0 +1,81 @@
+
+/*** Ues with Contitional Stylesheets module at http://www.drupal.org/project/conditional_styles ***/
+/**********************************************
+	    Stylesheet for Inernet Explorer 6–8
+***********************************************/
+
+/***** Layout structure *****/
+html {
+	height: auto;
+}
+#node-page-228 {
+	height: 0px !important;
+}
+
+
+/*
+*:first-child + HTML .page .clearfix { height: 0px; }
+*/
+
+/***** Gradient styles *****/
+.tan-to-white {
+	background: none #ffffff 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efebdb', endColorstr='#ffffff', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+body.tan-to-white {
+	background: none #ffffff 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efebdb', endColorstr='#ffffff', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+.white-to-tan {
+	background: none #efebdb 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efebdb', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+body.white-to-tan {
+	background: none #efebdb 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#ffffff', endColorstr='#efebdb', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+.tan-to-lighter {
+	background: none #f7f6ee 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efebdb', endColorstr='#f7f6ee', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+body.tan-to-lighter {
+	background: none #f7f6ee 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efebdb', endColorstr='#f7f6ee', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+.lighter-to-tan {
+	background: none #e9e7d8 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f8f8f3', endColorstr='#e9e7d8', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+body.lighter-to-tan {
+	background: none #e9e7d8 0 0 scroll no-repeat; /* Old browsers */
+filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#f8f8f3', endColorstr='#e9e7d8', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+.blue-to-tan { background: url("../images/bkg-gradient-bluetan.png") repeat-x scroll 0 0 #e9e7d8; }
+
+body.blue-to-tan { background: url("../images/bkg-gradient-bluetan.png") repeat-x fixed 0 0 #e9e7d8; }
+
+.tan-to-blue { background: url("../images/bkg-gradient-tanblue.png") repeat-x scroll 0 0 #002c5d; }
+
+body.tan-to-blue { background: url("../images/bkg-gradient-tanblue.png") repeat-x fixed 0 0 #002c5d; }
+
+.red-to-tan { background: url("../images/bkg-gradient-redtan.png") repeat-x scroll 0 0 #e9e7d8; }
+
+body.red-to-tan { background: url("../images/bkg-gradient-redtan.png") repeat-x fixed 0 0 #e9e7d8; }
+
+.tan-to-red { background: url("../images/bkg-gradient-tanred.png") repeat-x scroll 0 0 #ab0520; }
+
+body.tan-to-red { background: url("../images/bkg-gradient-tanred.png") repeat-x fixed 0 0 #ab0520; }
+
+#block-block-19, /*mobile search icon*/
+#block-block-20, /*mobile banner*/
+#block-jump-menu-jump-menu-m-main-menu {
+	display: none;
+}

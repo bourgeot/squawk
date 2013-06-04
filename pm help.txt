@@ -1,0 +1,17 @@
+Squawk is a way to post (brief or long) messages to your boss, reports, or peers easily and they don't end up in email! You just Type it, Tag it, and Tell it.
+
+Up at the top you see Leaders, Peers and Direct reports that reflect your little corner of the organizational hierarchy.
+
+The idea is that you go to someone's channel, or your own, and post an update for them. You can also share your update with others in your reporting chain by copying it to others. 
+
+If you make a message private, only you and the person whose channel you post it on can see it. Don't go nuts with this yet but do try it out and post any issues you find with it. Also please tell me if it works!
+
+You can upload an avatar for yourself on your profile, and manage the tags you have made. You can also add new tags when you post updates.
+
+Each of you have me, the Prime Minister, as one your direct reports. Please post feature suggestions and bugs you find on my channel and tag them as such. You already have those tags in your list. To activate them just click them.
+
+If you archive this update it won't show in your main channel any more, but you can always find it by clicking on the help tab.
+
+Thanks! I really want your feedback on how to make this more useful...oh--and special thanks to Rebecca Macaulay who made this look pretty!
+
+Squawk Away!

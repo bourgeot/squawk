@@ -1,0 +1,163 @@
+<?php
+/*
+ * Implements hook install
+ */
+function squawk_install() {
+	 //Ensure the squawk update node type is available.
+	node_types_rebuild();
+	$types = node_type_get_types();
+	node_add_body_field($types['squawk_update']);
+	//load the instance definition for the body
+	$body_instance = field_info_instance('node', 'body', 'squawk_update');
+	//configure
+	$body_instance['type'] = 'text_summary_or_trimmed';
+	$body_instance['label'] = 'Update Content';
+	field_update_instance($body_instance);
+	//create the fields
+	foreach(_squawk_field_defns() as $field) {
+		field_create_field($field);
+	}
+	foreach(_squawk_field_instances() as $instance) {
+		$instance['entity_type'] = 'node';
+		$instance['bundle'] = 'squawk_update';
+		field_create_instance($instance);
+	}
+
+}
+
+/*
+ * Implements hook uninstall
+ */
+function squawk_uninstall() {
+  // Gather all the example content that might have been created while this
+  // module was enabled.
+  $sql = 'SELECT nid FROM {node} n WHERE n.type = :type';
+  $result = db_query($sql, array(':type' => 'squawk_update'));
+  $nids = array();
+  foreach ($result as $row) {
+    $nids[] = $row->nid;
+  }
+
+  // Delete all the nodes at once
+  node_delete_multiple($nids);
+
+					  
+
+
+// Loop over each of the fields defined by this module and delete
+  // all instances of the field, their data, and the field itself.
+  foreach (array_keys(_squawk_field_defns()) as $field) {
+    field_delete_field($field);
+  }
+
+  // Loop over any remaining field instances attached to the job_post
+  // content type (such as the body field) and delete them individually.
+  $instances = field_info_instances('node', 'squawk_update');
+  foreach ($instances as $instance_name => $instance) {
+    field_delete_instance($instance);
+  }
+
+  // Delete our content type
+  node_type_delete('squawk_update');
+
+  // Purge all field infromation
+  field_purge_batch(1000);
+
+}
+
+//put the field types in their own function so they can be installed and uninstalled more easily
+function _squawk_field_defns() {
+	//taxonomy field and recipient user field
+	//each are structured arrays
+	//I made the recipient field flat and will copy nodes for each new recipient.
+	//not true of forwarders however, I am making that an array of uids <--I don't think i need this.
+	//also adding a private message indicator as a yes no field
+	$t = get_t(); //can't use t function in install but now we can
+	return array(
+		'field_squawk_private' => array(
+			'field_name' => 'field_squawk_private',
+			'type' => 'list_boolean',
+			'label' => $t('Private'),
+			'cardinality' => 1,
+		),
+		/*'field_squawk_forwarders' => array(
+			'field_name' => 'field_squawk_forwarders',
+			'type' => 'number_integer',
+			'label' => $t('Forwarded By'),
+			'cardinality' => -1,
+		),*/
+		'field_squawk_recipient' => array(
+			'field_name' => 'field_squawk_recipient',
+			'type' => 'number_integer',
+			'label' => $t('Recipient'),
+		),
+		'field_squawk_tags' => array(
+			'field_name' => 'field_squawk_tags',
+			'type' => 'taxonomy_term_reference',
+			'cardinality' => -1,
+			'label' => $t('Tags'),
+			'settings' => array(
+				'allowed_values' => array(
+					array(
+						'vocabulary' => 'squawk_tags',
+						'parent' => 0,
+					),
+				),
+			),
+		),
+	);	
+}
+function _squawk_field_instances() {
+	$t = get_t();
+	return array(
+		'field_squawk_private' => array(
+			'field_name' => 'field_squawk_private',
+			'type' => 'list_boolean',
+			'default_value' => FALSE,
+			'label' => $t('Private'),
+			'widget' => array(
+				'type' => 'options_onoff',
+				'settings' => array('display_label'=>TRUE,),
+				
+			),
+			'display' => array(
+				'default' => array(
+					'label' => 'inline',
+					'type' => 'text',
+					'settings' => array('display_label'=>TRUE,),
+				),
+			),
+		),
+		'field_squawk_recipient' => array(
+			'field_name' => 'field_squawk_recipient',
+			'type' => 'number_integer',
+			'default_value' => 0,
+			'label' => $t('Recipient'),
+			'widget' => array(
+				'type' => 'number',
+				
+			),
+			'display' => array(
+				'default' => array(
+					'label' => 'hidden',
+					'type' => 'text',
+				),
+			),
+		),
+		'field_squawk_tags' => array(
+			'label' => $t('Tags'),
+			'field_name' => 'field_squawk_tags',
+			'widget' => array(
+				'type' => 'options_buttons',
+			),
+			'display' => array(
+				'default' => array(
+					'label' => 'above',
+					'type' => 'taxonomy_term_reference_plain',
+				),
+			),
+
+		),
+	);
+
+}

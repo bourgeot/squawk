@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * Implements hook_views_data().
+ *
+ */
+function squawk_views_data() {
+  $tables = array();
+  if (module_exists('user_relationships') && module_exists('statuses')) {
+	dsm('I am here');
+    // Expose data from a user's friends AND that user.
+	$tables['squawk_statuses']['table']['group'] = t('Squawk');
+	$tables['squawk_statuses']['table']['join'] = array(
+				'users' => array(
+					'left_field' => 'uid',
+					'table' => 'statuses',
+					'field' => 'recipient',
+					'handler' => 'views_join',
+					'type' => 'INNER',
+				)
+			);
+	$tables['squawk_statuses']['table']['base'] = array(
+				'field' => 'sid',
+				'table' => 'statuses',
+				'title' => t('Squawk Statuses'),
+				'help' => t('Statuses are mostly short updates.'),
+				'weight' => 10,
+			);
+
+	  // Declares the Status ID column.
+	$tables['squawk_statuses']['sid'] = array(
+			'title' => t('Status ID'),
+			'help' => t('The ID of the status update.'),
+			'table' => 'statuses',
+			'field' => array(
+			  'handler' => 'views_handler_field',
+			  'click sortable' => TRUE,
+			),
+			'filter' => array(
+			  'handler' => 'views_handler_filter_numeric',
+			),
+			'sort' => array(
+			  'handler' => 'views_handler_sort',
+			),
+			'argument' => array(
+			  'handler' => 'views_handler_argument_numeric',
+			),
+	);
+  }
+  return $tables;
+}

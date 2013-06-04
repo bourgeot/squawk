@@ -1,0 +1,344 @@
+<?php
+
+/*
+ * Squawk Blocks
+ *
+ */
+ 
+//Hooks.
+/*
+ * implements hook menu
+ */
+function squawk_blocks_menu() {
+	$items['squawk-blocks-form'] = array(
+		'title' => t('Squawk Blocks Form'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('squawk_blocks_tags_form'),
+		'access callback' => TRUE,
+		'type' => MENU_NORMAL_ITEM,
+	);
+	return $items;
+}
+/**
+ * Implements hook_block_info().
+ *
+ * Define all blocks provided by the module.
+ */
+function squawk_blocks_block_info() {
+  // Define an associative array for each block, in this case just one:
+  $blocks['user_sort_tags'] = array(
+    // info: (requried) The name of the block.
+    'info' => t('User Specific Sorting Tags'),
+    // cache: (optional) Same for every user on every page where it is visible.
+    //'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * Return a rendered or renderable view of a block.
+ */
+function squawk_blocks_block_view($delta = '') {
+  //$delta: what block to render as defined in hook_block_info.
+  global $user;
+  $u = user_load($user->uid);
+  $fname=$u->field_first_name['und'][0]['value'];
+  switch ($delta) {
+    case 'user_sort_tags':
+      // The default localized title of the block,
+      $block['subject'] = $fname . "'s Tags";
+      // The content of the block's body.
+      $block['content'] = squawk_blocks_contents($delta, $u);
+    break;
+  }
+  return $block;
+}
+/**
+ * Function that generates the content for d7dev_admin blocks.
+ */
+ 
+function squawk_blocks_contents($delta = '', $user) {
+  //additional blocks may be added, so base this on the block $delta
+	switch ($delta) {
+		case 'user_sort_tags':	
+			return drupal_get_form('squawk_blocks_tags_form');
+		break;
+	}
+}
+
+//form for displaying an interactive list of taxonomy terms based on the user's current tag items
+function squawk_blocks_tags_form($form, &$form_state) {
+	//first set up the form state
+	if (empty($form_state['tag_count'])) {
+		$form_state['tag_count'] = 0;
+	}
+	$form['add_tag'] = array(
+		'#type' => 'submit',
+		'#weight'=> -20,
+		'#value' => t('Add a Tag'),
+		'#submit' => array('squawk_blocks_new_tag_add_one'),
+		'#ajax' => array(
+			'callback' => 'squawk_blocks_new_tag_callback',
+			'wrapper' => 'squawk-blocks-add-new-subform',
+			'effect' => 'slide',
+		),
+	);
+	$form['subform'] = array(
+		'#prefix' => '<div id="squawk-blocks-add-new-subform">',
+		'#suffix' => '</div>',
+		'#weight' => -19,
+		'#tree' => TRUE,
+		'#type' => 'fieldset',
+		'#collapsed' => false,
+		'#collapsible' => TRUE,
+	);
+	for ($i = 0; $i < $form_state['tag_count']; $i++) {
+//		$form['subform']['new_tag'][$i] = array(
+		$form['subform']['new_tag'] = array(
+			'#type' => 'textfield',
+			'#title' => t('Name'),
+			'#size' => 30,
+		);
+		$form['subform']['actions']['submit'] = array( //its id = 'edit-subform-actions-submit'
+			'#type' => 'submit',
+			'#value' => t('Ok'),
+			'#submit' => array('squawk_blocks_new_tag_save'),
+			'#ajax' => array(
+			  'callback' => 'squawk_blocks_new_tag_save_callback',
+			  'wrapper' => 'squawk-blocks-tags-form-content',  //this is defined in the theme function below. It makes the ajax work.
+			),
+			
+		);
+	}
+	global $user;
+	$tag_set = squawk_blocks_fetch_tag_set($user->uid);
+	if(empty($form_state['vocabulary'])) {
+		$form_state['vocabulary'] = $tag_set['vocabulary'];
+	}
+	if(empty($form_state['parent'])) {
+		$form_state['parent'] = $tag_set['parent'];
+	}
+
+	$form_state['user'] = $user;
+	$form['tag_set']['#tree'] = TRUE;
+	foreach ($tag_set['terms'] as $key => $tag) {
+		//$form['tag_set'][$tag->tid]['vocabulary'] = $tag_set['vocabulary'];
+		$form['tag_set'][$tag->tid] = array(
+			'name' => array(
+				'#markup' => check_plain($tag->name),
+			),
+			'weight' => array(
+			  '#type' => 'weight',
+			  '#title' => t('Weight for @title', array('@title' => $tag->name)),
+			  '#title_display' => 'invisible',
+			  '#delta' => 10,
+			  '#default_value' => $tag->weight,
+			  '#attributes' => array('class' => array('order-weight')),
+			),
+			'edit' => array(
+				'#type' => 'link', 
+				'#title' => t('edit tag'), 
+				'#href' => 'taxonomy/term/' . $tag->tid . '/edit', 
+				'#options' => array('query' => drupal_get_destination())
+			),
+			'tag_name' => array(
+				'#type' => 'value',
+				'#value' => $tag->name,
+			),
+		);
+	}
+	// Only make this form include a submit button and weight if more than one
+	// tag exists.
+	if (count($tag_set['terms']) > 1) {
+		$form['actions'] = array('#type' => 'actions');
+		$form['actions']['submit'] = array('#type' => 'submit', '#value' => t('Save Changes'));
+	}
+	return $form;
+}  
+/**
+ * Theme callback for the tabledrag_example_simple_form form
+ *
+ * The theme callback will format the $form data structure into a table and
+ * add our tabledrag functionality.  (Note that drupal_add_tabledrag should be
+ * called from the theme layer, and not from a form declaration.  This helps
+ * keep template files clean and readable, and prevents tabledrag.js from
+ * being added twice accidently.
+ *
+ * @return
+ *   The rendered tabledrag form
+ */
+function theme_squawk_blocks_tags_form($variables) {
+	$form = $variables['form'];
+
+  // Initialize the variable which will store our table rows
+	$rows = array();
+  // Iterate over each element in our $form['tag_set'] array
+  foreach (element_children($form['tag_set']) as $id) {
+
+    // Before we add our 'weight' column to the row, we need to give the
+    // element a custom class so that it can be identified in the
+    // drupal_add_tabledrag call.
+    //
+    // This could also have been done during the form declaration by adding
+    //     '#attributes' => array('class' => 'example-item-weight'),
+    // directy to the 'weight' element in the form.
+    //$form['example_items'][$id]['weight']['#attributes']['class'] = array('example-item-weight');
+
+    // We are now ready to add each element of our $form data to the $rows
+    // array, so that they end up as individual table cells when rendered
+    // in the final table.  We run each element through the drupal_render()
+    // function to generate the final html markup for that element.
+    $rows[] = array(
+      'data' => array(
+        // Add our 'name' column
+        drupal_render($form['tag_set'][$id]['name']),
+        // Add our 'edit' column
+        drupal_render($form['tag_set'][$id]['edit']),
+        // Add our 'weight' column
+        drupal_render($form['tag_set'][$id]['weight']),
+      ),
+      // To support the tabledrag behaviour, we need to assign each row of the
+      // table a class attribute of 'draggable'. This will add the 'draggable'
+      // class to the <tr> element for that row when the final table is
+      // rendered.
+      'class' => array('draggable'),
+    );
+  }
+  // We now define the table header values.  Ensure that the 'header' count
+  // matches the final column count for your table.
+  //$header = array(t('Name'), t('Description'), t('Weight'));
+  $header = array(t('Sort Order'), t('Operation'), t('Weight'));
+
+  // We also need to pass the drupal_add_tabledrag() function an id which will
+  // be used to identify the <table> element containing our tabledrag form.
+  // Because an element's 'id' should be unique on a page, make sure the value
+  // you select is NOT the same as the form ID used in your form declaration.
+  $table_id = 'tag-sort-table';
+
+  // We can render our tabledrag table for output.
+  $output = '<div id="squawk-blocks-tags-form-content">';
+  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => $table_id)));
+  // And then render any remaining form elements (such as our submit button)
+  $output .= drupal_render_children($form);
+  $output .='</div>';
+  // We now call the drupal_add_tabledrag() function in order to add the
+  // tabledrag.js goodness onto our page.
+  //
+  // For a basic sortable table, we need to pass it:
+  //   - the $table_id of our <table> element,
+  //   - the $action to be performed on our form items ('order'),
+  //   - a string describing where $action should be applied ('siblings'),
+  //   - and the class of the element containing our 'weight' element.
+  drupal_add_tabledrag($table_id, 'order', 'sibling', 'order-weight');
+
+  return $output;
+}
+
+/**
+ * Submit callback for the tabledrag_example_simple_form form
+ *
+ * Updates the 'weight' column for each element in our table, taking into
+ * account that item's new order after the drag and drop actions have been
+ * performed.
+ */
+function squawk_blocks_tags_form_submit($form, &$form_state) {
+  // Because the form elements were keyed with the item ids from the database,
+  // we can simply iterate through the submitted values.
+  //dsm($form_state);
+  foreach ($form_state['values']['tag_set'] as $key => $item) {
+	$term = new StdClass();
+	$term->tid = $key;
+	$term->weight=$item['weight'];
+	$term->vid = $form_state['vocabulary']->vid;
+	$term->name = $item['tag_name'];
+	taxonomy_term_save($term);
+    //db_query(
+    //  "UPDATE {tabledrag_example} SET weight = :weight WHERE id = :id",
+    //  array(':weight' => $item['weight'], ':id' => $id)
+  }
+}
+
+
+
+/*
+ * squawk_blocks_fetch_tag_set
+ * return an array with a 'vocabulary' object and a 'terms' array.
+ *
+ */
+function squawk_blocks_fetch_tag_set($uid) {
+	//load the taxonomy terms in the users vocab sorted by alpha for now.
+	//load the user specific tags from squawk_tags. Each relevant tag has the user as the parent
+	//dont assume the vid just in case ...
+	$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+	//the current user's tags all have the username as the parent tid.
+	$u = user_load($uid);
+	$query = new EntityFieldQuery;
+	$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+		->propertyCondition('name', $u->name)
+		->propertyCondition('vid', $vocabulary->vid)
+		->propertyOrderBy('weight','ASC')
+		->execute();
+
+	$tag_set = array();
+	$tag_set['vocabulary'] = $vocabulary;
+	//make sure it has a value. It should have. This tid corresponds to the parent tag of all the ones of interest.
+	if(isset($entities['taxonomy_term'])) {
+		$user_tid = array_keys($entities['taxonomy_term']);
+		$tag_set['terms'] = taxonomy_get_tree($vocabulary->vid,$user_tid[0]);
+		$tag_set['parent'] = $user_tid[0];
+	}
+	return $tag_set;
+}
+/**
+ * Implements hook_theme().
+ *
+ * We need run our forms through custom theme functions in order to build the
+ * table structure which is required by tabledrag.js.  Before we can use our
+ * custom theme functions, we need to implement hook_theme in order to register
+ * them with Drupal.
+ *
+ * We are defining our theme hooks with the same name as the form generation
+ * function so that Drupal automatically calls our theming function when the
+ * form is displayed.
+ */
+function squawk_blocks_theme() {
+  return array(
+    // Theme function for the 'sortable' example
+    'squawk_blocks_tags_form' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+function squawk_blocks_new_tag_callback(&$form, &$form_state) {
+	return $form['subform'];
+}
+function squawk_blocks_new_tag_add_one(&$form, &$form_state) {
+	$form_state['tag_count']= $form_state['tag_count'] + 1;
+	$form_state['rebuild'] = TRUE;
+}
+function squawk_blocks_new_tag_save(&$form, &$form_state) {
+	//dsm($form_state);
+	$vocabulary = $form_state['vocabulary'];
+	if (strlen($form_state['values']['subform']['new_tag']) > 0) {
+		$term = new stdClass();
+		$term->name = $form_state['values']['subform']['new_tag'];
+		$term->vid = $vocabulary->vid;
+		$term->parent = $form_state['parent'];
+		taxonomy_term_save($term);
+		if(isset($term->tid)) {
+			//reset the tag counter so the subform goes away
+			$form_state['tag_count'] = 0 ;
+			$form_state['rebuild']=true;
+		}
+		return;
+	}
+	else {
+		return;
+	}
+}
+function squawk_blocks_new_tag_save_callback(&$form, &$form_state) {
+	return $form;
+}

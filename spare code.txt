@@ -1,0 +1,53 @@
+function squawk_peers($uid) {
+	// Returns an array of user ids that report to the same uid that
+	// $uid reports to. Here, report means that $uid is the requestee_id
+	// of an approved 'lead' relationship type. The requester_id of that type is the 
+	// 'lead', the uid they report to.
+	$peers = array();
+	//user relationships api provides some handy functions here.
+	//get $uid's lead
+	$leads = user_relationships_load(array('requestee_id'=>$uid,'rtid'=>1));
+	foreach ($leads as $lead) {
+		foreach($lead as $key=>$value) {
+			if ($key == 'requester_id') {
+				//$peerset = user_relationships_load(array('requester_id' => $value), array('include_user_info'=>TRUE));
+				$peerset = user_relationships_load(array('requester_id' => $value));
+				//now mess with the peers
+				foreach ($peerset as $peer) {
+					//$self=FALSE;
+					foreach ($peer as $peerkey => $peervalue) {
+						if ($peerkey == 'requestee_id') {
+							// remove the $uid from the peer list
+							if($peervalue != $uid) {
+								$peers[$peervalue] = squawk_format_user($peervalue);
+							}
+						}
+						/*$peer_name='test';
+						$peer_path= 'users/' . '1'; 
+						$peer_uid=1;
+						if ($peerkey == 'requestee') {
+							//unpack the object
+							$peer_name = $peervalue->name;
+							$peer_path = 'users/' . $peervalue->name;
+							$peer_uid = $peervalue->uid;
+							
+						}*/
+						
+					}
+					/*$attributes = array( 
+						'attributes' => array( 
+							'id' => 'user-' . $peer_uid,
+							'class'=>array('classyclass',),
+						)
+					);
+					if ($self == FALSE) $peers[$peer_uid]['data'] = l($peer_name,$peer_path,$attributes).
+						'<span class="ui-li-count" >spam</span>';
+					*/
+				}
+			}
+		}
+	}
+	//dsm($attributes);
+	//dsm($peers);
+	return $peers;
+}

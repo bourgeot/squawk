@@ -1,0 +1,264 @@
+<?php
+
+/*
+ * Squawk Blocks
+ *
+ */
+ 
+//Hooks.
+
+/**
+ * Implements hook_block_info().
+ *
+ * Define all blocks provided by the module.
+ */
+function squawk_blocks_block_info() {
+  // Define an associative array for each block, in this case just one:
+  $blocks = array(
+	'user_tags_filter_block' => array(
+		'info' => t('User Specific Update Filters'),
+		'cache' => DRUPAL_CACHE_PER_USER,
+	),
+	'sender_filter_block' => array(
+		'info' => t('Author/Sender Name Filters'),
+		'cache' => DRUPAL_CACHE_PER_USER,
+	),
+	'viewer_navigation_links_block' => array(
+		'info' => t('Viewer Navigation Links'),
+		'cache' => DRUPAL_CACHE_PER_USER,
+	),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * Return a rendered or renderable view of a block.
+ */
+function squawk_blocks_block_view($delta = '') {
+  $block=array();
+  //$delta: what block to render as defined in hook_block_info.
+  global $user;
+  $u = user_load($user->uid);
+  $fname=$u->field_first_name['und'][0]['value'];
+  switch ($delta) {
+
+	case 'user_tags_filter_block':
+		$block['subject'] = '';
+		$block['content'] = squawk_blocks_contents($delta, $u);
+		
+	break;
+	case 'sender_filter_block':
+		$block['subject'] = '';
+		$block['content'] = squawk_blocks_contents($delta, $u);
+		
+	break;
+	case 'viewer_navigation_links_block':
+		$block['subject'] = '';
+		$block['content'] = squawk_blocks_viewer_navigation_links($delta, $u);
+		
+	break;
+  }
+  return $block;
+}
+/**
+ * Function that generates the content for d7dev_admin blocks.
+ */
+ 
+function squawk_blocks_contents($delta = '', $user) {
+  //additional blocks may be added, so base this on the block $delta
+	switch ($delta) {
+		case 'user_tags_filter_block': 
+			//return squawk_blocks_filter_block($user);
+			return drupal_get_form('squawk_blocks_filters');
+		break;
+		case 'sender_filter_block': 
+			//return squawk_blocks_filter_block($user);
+			return drupal_get_form('squawk_blocks_sender_filters');
+		break;
+		case 'viewer_navigation_links_block':
+			return squawk_blocks_viewer_navigation_links($delta);
+		break;
+	}
+}
+function squawk_blocks_filters($form, &$form_state) {
+	global $user;
+	$tag_set = squawk_blocks_fetch_tag_set($user->uid);
+	if(empty($form_state['vocabulary'])) {
+		$form_state['vocabulary'] = $tag_set['vocabulary'];
+	}
+	if(empty($form_state['parent'])) {
+		$form_state['parent'] = $tag_set['parent'];
+	}
+	$form_state['user'] = $user;
+	$form['tag_set']['#tree'] = TRUE;
+	//dsm($tag_set);
+	$header = array();
+	$options = array();
+	$default_value = array();
+
+	$header = array(
+	  'title' => t('Content Filters'),
+	);
+	$jq_attach = array(
+	);
+	foreach ($tag_set['terms'] as $key => $tag) {
+		//$form['tag_set'][$tag->tid]['vocabulary'] = $tag_set['vocabulary'];
+		if ($tag->field_active['und'][0]['value'] == TRUE) {
+			$name = check_plain($tag->name);
+			$options[$tag->tid] = array(
+				'title' => $name,
+				'#attributes' => array(
+				  'id' => 'tag-' . $tag->tid,
+				  'class' => array('filter-tag', 'tag-' . drupal_html_class($name),
+				  ),
+				),
+			);
+			$default_value[$tag->tid]=TRUE;
+		}
+	}	
+	$form['tag_set'] = array (
+		'#type' => 'tableselect',
+		'#title' => 'My Tags',
+		'#header' => $header,
+		'#options' => $options,
+		'#multiple' => TRUE,
+		'#js_select' => TRUE,
+		'#default_value' => $default_value,
+	);
+	return $form;
+}
+/*
+ * squawk_blocks_fetch_tag_set
+ * return an array with a 'vocabulary' object and a 'terms' array.
+ *
+ */
+function squawk_blocks_fetch_tag_set($uid) {
+	//load the taxonomy terms in the users vocab sorted by alpha for now.
+	//load the user specific tags from squawk_tags. Each relevant tag has the user as the parent
+	//dont assume the vid just in case ...
+	$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+	//the current user's tags all have the username as the parent tid.
+	$u = user_load($uid);
+	$query = new EntityFieldQuery;
+	$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+		->propertyCondition('name', $u->name)
+		->propertyCondition('vid', $vocabulary->vid)
+		->propertyOrderBy('weight','ASC')
+		->execute();
+
+	$tag_set = array();
+	$tag_set['vocabulary'] = $vocabulary;
+	//make sure it has a value. It should have. This tid corresponds to the parent tag of all the ones of interest.
+	if(isset($entities['taxonomy_term'])) {
+		$user_tid = array_keys($entities['taxonomy_term']);
+		$tag_set['terms'] = taxonomy_get_tree($vocabulary->vid, $user_tid[0], NULL, TRUE);
+		$tag_set['parent'] = $user_tid[0];
+	}
+	return $tag_set;
+}
+function squawk_blocks_sender_filters($form, &$form_state) {
+	global $user;
+	$form_state['user'] = $user;
+	$form['#tree'] = TRUE;
+	$header = array();
+	$options = array();
+	$default_value = array();
+
+	$header = array(
+	  'title' => t('Sender Filters'),
+	);
+	$jq_attach = array(
+	);
+	$senders = squawk_fetch_senders($user->uid);
+	$senderlist = array();
+	foreach ($senders as $uid=>$sender_array) {
+		$options[$uid] = array(
+			'title' => $sender_array['sender'] . ' (' . $sender_array['count'] . ')',
+			'#attributes' => array(
+			  'id' => 'sender-' . $uid,
+			  'class' => array('filter-sender', 'uid-' . $uid,
+			  ),
+			),
+		);
+		$default_value[$uid]=TRUE;
+		$senderlist[$uid] = $sender_array['sender'];
+	}	
+	$form['sender_bundle'] = array(
+		'#type' => 'container',
+	);
+	$form['sender_bundle']['sender_title'] = array(
+		'#type' => 'checkbox',
+		'#title' => 'Peers',
+		'#weight' => 1,
+	);
+	$form['sender_bundle']['sender_list'] = array(
+		'#type' => 'checkboxes',
+		//'#theme' => 'item_list',
+		//'#title' => 'Peers',
+		'#options' => $senderlist,
+		'#weight' => 2,
+	);
+	/*
+	$form['senders'] = array (
+		'#type' => 'tableselect',
+		'#title' => 'Senders',
+		'#header' => $header,
+		'#options' => $options,
+		'#multiple' => TRUE,
+		'#js_select' => TRUE,
+		'#default_value' => $default_value,
+	);
+	*/
+	return $form;
+}
+
+function squawk_blocks_viewer_navigation_links($delta, $u) {
+	$contents = array(
+		'destination_picture' => array(
+			'#theme' => 'user_picture',
+			'#account' => $u,
+			'#prefix' => '<div id="user-picture-' . $u->uid . '" class="user-picture" >',
+			'#suffix' => '</div>',
+		),
+		'home_link' => array(
+			'#prefix' => '<div id="user-home-navigation-' . $u->uid . '" class="navigation-link home" >',
+			'#suffix' => '</div>',
+			'#theme' => 'link',
+			'#text' => 'Me',
+			'#path' => 'channels/' . $u->uid,
+			'#options' => array(
+				'attributes' => array('class' => array('navigation-link', 'home'), 'id' => 'home-' . $u->uid),
+				//REQUIRED:
+				'html' => FALSE,
+			),
+		),
+		'manage_tags_link' => array(
+			'#prefix' => '<div id="manage-tags-' . $u->uid . '" class="navigation-link" >',
+			'#suffix' => '</div>',
+			'#theme' => 'link',
+			'#text' => 'Manage Filters/Tags',
+			'#path' => 'channels/' . $u->uid . '/tags',
+			'#options' => array(
+				'attributes' => array('class' => array('navigation-link', 'manage-tags'), 'id' => 'manage-tags-' . $u->uid),
+				//REQUIRED:
+				'html' => FALSE,
+			),
+		),
+		'manage_profile_link' => array(
+			'#prefix' => '<div id="manage-profile-' . $u->uid . '" class="navigation-link" >',
+			'#suffix' => '</div>',
+			'#theme' => 'link',
+			'#text' => 'Manage My Profile',
+			'#path' => 'channels/' . $u->uid . '/profile',
+			'#options' => array(
+				'attributes' => array('class' => array('navigation-link', 'manage-profile'), 'id' => 'manage-profile-' . $u->uid),
+				//REQUIRED:
+				'html' => FALSE,
+			),
+		),
+	);	
+	return $contents;
+}

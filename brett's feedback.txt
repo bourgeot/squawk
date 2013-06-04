@@ -1,0 +1,18 @@
+Brett's Feedback
+
+I feel like the "tell it!" button needs to be higher in the UI. On my laptop I don't even see it without having to scroll down. And it gets a lot worse on edit/forward, where the whole thread appears before you get to the button
+
+The headline is required on an edit/forward, but I think it seldom warrants a new headline.
+
+The font in the "Headline" text box, when you're entering data, is different from the font in the "content" box.
+
+The people ordering, if there is an order, is non obvious and kind of confusing. I'm talking about the "my peers" page as well as the "copy this to my (other)" page.
+
+Super love the tag styling on the read view. Not sure why it's not styled the same on the input screen
+
+I feel like I want a way to mark something as read without having to go into "more info" and back.
+
+
+
+
+

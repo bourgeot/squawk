@@ -1,0 +1,155 @@
+function _fetch_ua_orgs($url = '') {
+	if ($url == '') {
+		//get them all
+		$url = 'https://siaapps.uits.arizona.edu/home/orgs/ua_orgs/index.json';
+	}
+	$result = array();
+	$objs = array();
+	$root = new stdClass();
+	$f = file_get_contents($url);
+	if( $f !== FALSE ) {
+		$objs = json_decode($f);
+	}
+	unset($f);
+	//result has a bunch of objects in it. Transform the data to an array where each
+	//entry is indexed by its dept id and is itself an array. 
+	if(!empty($objs)) {
+		//open an ldap connection
+		// setup LDAP parameters
+		$ldapUrl = "ldaps://eds.arizona.edu";
+		$ldapPort = 636;
+		$bindDn = "uid=sasg-drupal,ou=App Users,dc=eds,dc=arizona,dc=edu";
+		$bindPw = "Jm2GvdiyeSQKB7UL8zeAjmW59Hdz2yAP";
+		$searchBase = "ou=People,dc=eds,dc=arizona,dc=edu";	
+		$ldap = ldap_connect($ldapUrl,$ldapPort);
+		
+		if (! $ldap) {
+			error_log("Could not connect to LDAP server");
+		}
+		// bind as app user
+		if (! ldap_bind($ldap, $bindDn, $bindPw)) {
+			error_log(ldap_error($ldap));
+		}
+		$attrs=array('placeholder','uid','cn','uaid');
+		foreach($objs as $obj) {
+			//dsm($obj->UaOrg->id);
+			//$filter='(&(employeeStatus=A)(!(objectclass=arizonaedutestperson))(employeePrimaryDept=' . $obj->UaOrg->id . '))';
+			$filter='(&(employeeStatus=A)(!(objectclass=arizonaedutestperson))(employeePrimaryDept=8107))';
+			$sr = ldap_search($ldap, $searchBase, $filter, $attrs);
+			$entry=ldap_first_entry($ldap,$sr);
+			$dr=array();
+			while ($entry) {
+				$vals=ldap_get_values($ldap,$entry, "uaid");
+				dsm($vals);
+				$dr[]=$vals[0];
+				$entry = ldap_next_entry($ldap, $entry);
+			}
+//			$e=ldap_get_entries($ldap,$sr);
+			//each obj has a UaOrg obj, a ParentUaOrg obj, and a ChildUaOrg obj
+//			$result[$obj->UaOrg->id] = array(
+//			foreach($e as $key=>$value) {
+//			}
+//			);
+			$o = new stdClass();
+			$o->id = $obj->UaOrg->id;
+			$o->name = $obj->UaOrg->name;
+			$o->parent_id = $obj->UaOrg->parent_id;
+			$o->parent = array();
+			$o->children = array();
+			$o->staff_count = ldap_count_entries($ldap,$sr);
+			$o->staff = $dr;
+			$result[] = $o;
+			ldap_free_result($sr);
+//			$e=null;
+		}
+		for ($j = 0; $j < count($result); $j++) {
+			for ($i = 0; $i < count($result); $i++) {
+				if ($result[$j]->id == 'UNAZ') {
+					$root=$result[$j];
+				}
+				else {
+					if ($result[$i]->id == $result[$j]->parent_id) {
+						$result[$j]->parent = $result[$i];
+						$result[$i]->children[] = $result[$j];
+					}
+				}
+			}
+		}
+	}
+	ldap_close($ldap);
+	return $root;
+}
+
+/*
+ * This code works.
+ */
+function directory() {
+	drupal_set_title('directory');
+	$page = array();
+	$objs = _fetch_ua_orgs();
+	//result has a bunch of objects in it. Transform the data to an array where each
+	//entry is indexed by its dept id and is itself an array. 
+	if(!empty($objs)) {
+		//open an ldap connection
+		// setup LDAP parameters
+		$ldapUrl = "ldaps://eds.arizona.edu";
+		$ldapPort = 636;
+		$bindDn = "uid=sasg-drupal,ou=App Users,dc=eds,dc=arizona,dc=edu";
+		$bindPw = "Jm2GvdiyeSQKB7UL8zeAjmW59Hdz2yAP";
+		$searchBase = "ou=People,dc=eds,dc=arizona,dc=edu";	
+		$ldap = ldap_connect($ldapUrl,$ldapPort);
+		
+		if (! $ldap) {
+			error_log("Could not connect to LDAP server");
+		}
+		// bind as app user
+		if (! ldap_bind($ldap, $bindDn, $bindPw)) {
+			error_log(ldap_error($ldap));
+		}
+		//$attrs = array('placeholder','uid','cn', );
+		$attrs = array(
+			//'placeholder',
+			'cn',
+			'sn',
+			'givenName',
+			'eduPersonPrimaryAffiliation',
+			'uid',
+			//'mail',
+			'dateOfBirth',
+			//'employeeBldgNum',
+			'employeeBldgName',
+			//'employeeIsFerpaTrained',
+			//'employeeOfficialOrg',
+			'employeePhone',
+			//'employeePrimaryDept',
+			'employeePrimaryTitle',
+			//'employeeStatus',
+			//'eduPersonAffiliation'
+		);
+
+		foreach($objs as $obj) {
+			$filter='(&(employeeStatus=A)(!(objectclass=arizonaedutestperson))(employeePrimaryDept=' . $obj->UaOrg->id . '))';
+			$sr = ldap_search($ldap, $searchBase, $filter, $attrs);
+			$entry=ldap_first_entry($ldap,$sr);
+			$dr=array();
+			while ($entry) {
+				$found = ldap_get_attributes($ldap, $entry);
+				for ($i=0; $i < $found['count']; $i++) {
+					$dr[]=$found[$i] . ': ' . $found[$found[$i]][0];
+				}
+				$entry = ldap_next_entry($ldap, $entry);
+			}
+
+		$page[] = array(
+			'#prefix' => '<p>',
+			'#suffix' => '</p>',
+			'#type' => 'item',
+			'#title' => $obj->UaOrg->name . ' (' . $obj->UaOrg->id . ')' ,
+			'#markup' => implode('</br>', $dr),
+		);
+		}
+	
+	}
+	//$page = drupal_json_encode($object);
+	return $page;
+}

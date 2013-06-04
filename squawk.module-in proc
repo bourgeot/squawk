@@ -1,0 +1,633 @@
+<?php
+/*
+ * Last update 21 September.
+ * 
+ */
+
+/* 
+ *	implements hook_menu
+ */
+function squawk_menu() {
+	$items['reports'] = array(
+		'title' => t('Reports'),
+		'page callback' => 'squawk_relationships_themed',
+		'page arguments' => array( 'reports'),
+		'access callback' => TRUE,
+		'menu name' => 'Squawk!',
+		'type' => MENU_NORMAL_ITEM,
+	);
+	$items['leads'] = array(
+		'title' => t('Leads'),
+		'page callback' => 'squawk_relationships_themed',
+		'page arguments' => array('leads'),
+		'menu name' => 'Squawk!',
+		'access callback' => TRUE,
+		'type' => MENU_NORMAL_ITEM,
+	);
+	
+	$items['peers'] = array(
+		'title' => t('Peers'),
+		'page callback' => 'squawk_relationships_themed',
+		'page arguments' => array('peers'),
+		'access callback' => TRUE,
+		'menu name' => 'Squawk!',
+		'type' => MENU_NORMAL_ITEM,
+	);
+
+	$items['squawk-update/%user_uid_optional'] = array(
+		'title' => t('AddUpdate'),
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('squawk_update_form'),
+		'access callback' => TRUE,
+		'type' => MENU_NORMAL_ITEM,
+	);
+
+	$items['user/%/new-update'] = array(
+		'title' => 'New Update!',
+		'description' =>
+			'Post an update on this person\'s profile page.',
+		'page callback' => 'drupal_get_form',
+		'page arguments' => array('squawk_squawk_update_form',1),
+//		'page arguments' => array('squawk_update_form',1),
+		'access callback' => TRUE,
+		'type' => MENU_LOCAL_TASK,
+	);
+   return $items;
+}
+/*
+ * implements hook_menu_alter
+ */
+function squawk_menu_alter(&$items) {
+  $items['user/%/edit'] = array(
+    'type' => MENU_NORMAL_ITEM,
+	'title' => t('My Profile'),
+	'menu_name' => 'main-menu',
+  );
+}
+
+ /**
+ * Implements hook_form_alter().
+ */
+ function squawk_form_alter(&$form, &$form_state, $form_id) {
+	dsm($form);
+	if ($form_id == 'squawk_update_form') {
+	global $user;
+	//load the user specific tags from squawk_tags
+	//dont assume the vid just in case ...
+	$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+	//the current user's tags all have the username as the parent tid.
+	$query = new EntityFieldQuery;
+	$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+		->propertyCondition('name', $user->name)
+		->propertyCondition('vid', $vocabulary->vid)
+		->execute();
+	
+	$tag_default_value = array();
+	$options = array();
+	//make sure it has a value. It should have.
+	if(isset($entities['taxonomy_term'])) {
+		$user_tid = array_keys($entities['taxonomy_term']);
+		$terms = taxonomy_get_tree($vocabulary->vid,$user_tid[0]);
+		foreach($terms as $term) {
+			//build the options array for the checkboxes control
+			$options[$term->tid] = $term->name;
+			if( $term->name == 'New') {
+				$tag_default_value[$term->tid] = $term->tid;
+			}
+		}
+	}
+
+	}
+	if ($form_id == 'squawk_update_node_form') {
+		//dsm('hi');
+		//dsm($form['field_squawk_tags']['und']['#options']);
+		global $user;
+		//load the user specific tags from squawk_tags
+		//dont assume the vid just in case ...
+		$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+		//the current user's tags all have the username as the parent tid.
+		$query = new EntityFieldQuery;
+		$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+			->propertyCondition('name', $user->name)
+			->propertyCondition('vid', $vocabulary->vid)
+			->execute();
+		//make sure it has a value. It should have.
+		if(isset($entities['taxonomy_term'])) {
+			$user_tid = array_keys($entities['taxonomy_term']);
+			$terms = taxonomy_get_tree($vocabulary->vid,$user_tid[0]);
+			$options = array();
+			foreach($terms as $term) {
+				//build the options array for the checkboxes control
+				$options[$term->tid] = $term->name;
+        //if the form is open for add, capture the value of new
+			  if( $term->name == 'New') {
+				$tag_default_value[$term->tid] = $term->tid;
+			}
+			}
+		}
+		if ($options) {
+			$form['field_squawk_tags']['und']['#options'] = $options;
+		}
+		//rename the submit button
+		$form['actions']['submit']['#value'] = t('Tell It!');
+	}
+
+	dsm($form);
+}
+/*
+ * Implements hook_form
+ */
+function squawk_update_form($node, &$form_state) {
+  //dsm($node);
+  //dsm($form_state);
+//  $form = array();
+    $form['squawk_bonus_receivers'] = array(
+	  '#type' => 'checkboxes',
+	  '#options' => array('leads'=>t('Leads'), 'reports'=>t('Reports'), 'peers'=>t('Peers'), 'self'=>t('Self')),
+	  '#title' => t('Copy this to my (other):'),
+	  '#weight' => 50,
+	);
+  return $form;
+}
+
+/* 
+ * Implements hook_views_api()
+ * (this must be in the main file in order for views to look in the module.views.inc file)
+ *
+ */
+function squawk_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'squawk') . '/includes',
+  );  
+}
+
+
+function squawk_format_user($uid) {
+	// returns an array with the main key is the uid and has some formatted stuff for
+	// list items
+	$u=user_load($uid);
+	if (!$u->field_first_name || !$u->field_last_name || !$u->field_department) {
+		$display_name = $u->name;
+		$dept = 'Student Affairs';
+	}
+	else {
+		$fname=$u->field_first_name['und'][0]['value'];
+		$lname=$u->field_last_name['und'][0]['value'];
+		$dept=$u->field_department['und'][0]['value'];
+		$display_name = $fname . ' ' . $lname;
+	}
+	$attributes = array( 
+		'attributes' => array( 
+			'id' => 'user-' . $u->uid,
+			'class'=>array('user-link',),
+			)
+		);
+	
+	$output['data'] = l($display_name,'user/' . $u->uid, $attributes)
+		. "<span class='ui-li-count department' >" . $dept . "</span>";
+	//dsm($output);
+	return $output;
+}
+function squawk_relationships_themed($reltype) {
+	global $user;
+	$u=user_load($user->uid);
+	if (!$u->field_first_name) { 
+		$display_name = $u->name;
+	}
+	else {
+		$display_name = $u->field_first_name['und'][0]['value'];
+	}
+	$relations = squawk_relationships($user->uid,$reltype);
+	//dsm($relations);
+	//test for zero and make some messages based on it. I don't know how to do this yet.
+	$variables = array( 
+		'items'=> $relations,
+		'type' => 'ul',
+		'title' => $display_name . "'s " . $reltype,
+		'attributes' =>  array(
+			'id' => $reltype . '-' . $u->name,
+			'class' => array('ui-listview', $reltype,),
+			'data-role' => 'listview',
+			),
+	);	
+	return theme_item_list($variables);
+}
+
+function squawk_relationships($uid, $reltype) {
+	//if no reltype is given pick 'peers'
+	$relations = array();
+	switch ($reltype) {
+		case 'peers':
+			// Returns an array of user ids that report to the same uid that
+			// $uid reports to. Here, report means that $uid is the requestee_id
+			// of an approved 'lead' relationship type. The requester_id of that type is the 
+			// 'lead', the uid they report to.
+			//user relationships api provides some handy functions here.
+			//get $uid's lead
+			$leads = user_relationships_load(array('requestee_id'=>$uid,'rtid'=>1));
+			foreach ($leads as $lead) {
+				foreach($lead as $key=>$value) {
+					if ($key == 'requester_id') {
+						//$peerset = user_relationships_load(array('requester_id' => $value), array('include_user_info'=>TRUE));
+						$peerset = user_relationships_load(array('requester_id' => $value));
+						//now mess with the peers
+						foreach ($peerset as $peer) {
+							foreach ($peer as $peerkey => $peervalue) {
+								if ($peerkey == 'requestee_id') {
+									// remove the $uid from the peer list
+									if($peervalue != $uid) {
+										$relations[$peervalue] = squawk_format_user($peervalue);
+									}
+								}			
+							}
+						}
+					}
+				}
+			}
+			break;
+		case 'leads':
+			$leads = user_relationships_load(array('requestee_id'=>$uid,'rtid'=>1));
+			foreach ($leads as $lead) {
+				foreach($lead as $key=>$value) {
+					if ($key == 'requester_id') {
+						$relations[$value] = squawk_format_user($value);
+					}
+				}
+			}
+			break;
+		case 'reports':
+			$reports = user_relationships_load(array('requester_id'=>$uid,'rtid'=>1));
+			foreach ($reports as $report) {
+				foreach($report as $key=>$value) {
+					if ($key == 'requestee_id') {
+						$relations[$value] = squawk_format_user($value);
+					}
+				}
+			}
+			break;
+		case 'self':
+			$self = $uid;
+			$relations[$self] = squawk_format_user($self);
+			break;
+		//default:
+	}
+	return $relations;
+}
+/* 
+ * implements hook_user_update
+ */
+function squawk_user_update(&$edit) {
+	// $edit is the user account that has just been updated.
+	// this fires on login for some reason I don't understand yet. It exits to keep blank usernames from 
+	// getting a vocabulary entry
+	//dsm($edit);
+	if (!isset($edit->name)) {
+		return;
+	}
+	$username = $edit['name'];
+	//add a vocabulary with the name user_squawk_tags
+	if (module_exists('taxonomy')) {
+		// Check to see if the vocabulary already existed (i.e. from a previous installation).
+		$already_exists = db_query("SELECT vid, name FROM {taxonomy_vocabulary} WHERE module = 'squawk' AND
+			machine_name = 'squawk_tags'")->fetchObject();
+		if (empty($already_exists)) {
+			//create the vocabulary
+			// Create a default vocabulary for use with hashtags.
+			$vocabulary = (object) array(
+				'name' => t('Squawk Tags'),
+				'machine_name' => 'squawk_tags',
+				'description' => t('Contains Navigation and filtering tags used in Squawk Statuses.'),
+				'hierarchy' => 1,
+				'module' => 'squawk',
+				'weight' => 0,
+			);
+		taxonomy_vocabulary_save($vocabulary);
+		$vid = isset($vocabulary->vid) ? $vocabulary->vid :
+			db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'")->fetchField();
+		}
+		//now see if the username base term exists
+		$already_exists = db_query("SELECT a.vid, a.name as term FROM {taxonomy_term_data} a INNER JOIN {taxonomy_vocabulary} t ON a.vid = t.vid WHERE a.name ='" . $username . "' AND t.machine_name = 'squawk_tags'")->fetchObject();
+		if (!empty($already_exists)) {
+			//variable_set('statuses_tags_vid', $already_exists->vid);
+			drupal_set_message(t('The base term "@term" in Squawk Tags has been already configured for use.', 
+				array('@term' => $already_exists->term, )));
+			return;
+		}
+		$vid = db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'"
+			)->fetchField();
+		//seed the vocabulary with some basic terms for the parent term 
+		$term = new stdClass();
+		$term->name = $username;
+		$term->vid = $vid;
+		$term->parent = 0;
+		taxonomy_term_save($term);
+		//need the tid for this term b/c it is the parent for the following terms
+		$base_tid = $term->tid;
+		$default_tags=array('New','Archive','Recruiting','Admissions','Data','Financial Aid',);
+		foreach($default_tags as $value) {
+			$term = new stdClass();
+			$term->name = $value;
+			$term->vid = $vid;
+			$term->parent = $base_tid;
+			taxonomy_term_save($term);
+		}
+		drupal_set_message(t('The base term for username "' . $username . '" has been created and configured in Squawk Tags.'));
+	}
+	else {
+		drupal_set_message(t('Squawk only allows using tags when the Taxonomy module is installed.'));
+	}
+}
+/*
+ * implements hook_user_insert
+ */
+function squawk_user_insert(&$edit) {
+	// $edit is the user account that has just been updated. 
+	dsm( ' I am in User Insert Hook ' . $edit);
+	$username = $edit['name'];
+	//add a vocabulary with the name user_squawk_tags
+	if (module_exists('taxonomy')) {
+		// Check to see if the vocabulary already existed (i.e. from a previous installation).
+		$already_exists = db_query("SELECT vid, name FROM {taxonomy_vocabulary} WHERE module = 'squawk' AND
+			machine_name = 'squawk_tags'")->fetchObject();
+		if (empty($already_exists)) {
+			//create the vocabulary
+			// Create a default vocabulary for use with hashtags.
+			$vocabulary = (object) array(
+				'name' => t('Squawk Tags'),
+				'machine_name' => 'squawk_tags',
+				'description' => t('Contains Navigation and filtering tags used in Squawk Statuses.'),
+				'hierarchy' => 1,
+				'module' => 'squawk',
+				'weight' => 0,
+			);
+		taxonomy_vocabulary_save($vocabulary);
+		$vid = isset($vocabulary->vid) ? $vocabulary->vid :
+			db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'")->fetchField();
+		}
+		//now see if the username base term exists
+		$already_exists = db_query("SELECT a.vid, a.name as term FROM {taxonomy_term_data} a INNER JOIN {taxonomy_vocabulary} t ON a.vid = t.vid WHERE a.name ='" . $username . "' AND t.machine_name = 'squawk_tags'")->fetchObject();
+		if (!empty($already_exists)) {
+			//variable_set('statuses_tags_vid', $already_exists->vid);
+			drupal_set_message(t('The base term "@term" in Squawk Tags has been already configured for use.', 
+				array('@term' => $already_exists->term, )));
+			return;
+		}
+		$vid = db_query("SELECT vid FROM {taxonomy_vocabulary} WHERE machine_name = 'squawk_tags' AND module = 'squawk'"
+			)->fetchField();
+		//seed the vocabulary with some basic terms for the parent term 
+		$term = new stdClass();
+		$term->name = $username;
+		$term->vid = $vid;
+		$term->parent = 0;
+		taxonomy_term_save($term);
+		//need the tid for this term b/c it is the parent for the following terms
+		$base_tid = $term->tid;
+		$default_tags=array('New','Archive','Recruiting','Admissions','Data','Financial Aid',);
+		foreach($default_tags as $value) {
+			$term = new stdClass();
+			$term->name = $value;
+			$term->vid = $vid;
+			$term->parent = $base_tid;
+			taxonomy_term_save($term);
+		}
+		drupal_set_message(t('The base term for username "' . $username . '" has been created and configured in Squawk Tags.'));
+	}
+	else {
+		drupal_set_message(t('Squawk only allows using tags when the Taxonomy module is installed.'));
+	}
+}
+/*
+ * implements hook node info
+ */
+function squawk_node_info() {
+	//defining the squawk update node type
+	$squawk_update = array(
+		'squawk_update' => array(
+			'name' => t('Squawk Update'),
+			'base' => 'squawk_update',
+			'description' => t('Brief updates on what is new in student affairs.'),
+			'help' => t('To add an update to a profile, just type it, tag it, and tell it!'),
+			'has_title' => FALSE,
+			'locked' => FALSE,
+		),
+	);
+	return $squawk_update;
+}
+
+/*
+ * New tag
+ */
+function _squawk_add_tag() {
+	return;
+}
+
+/*
+ * implements hook_user_view
+ */
+function squawk_user_view($account) {
+	//dsm($account);
+	global $user;
+	$output = squawk_fetch_updates($user->uid, $account->uid);
+	$markup = drupal_render($output);
+	//dsm(request_path());  //returns nothing b/c /user is the default front page (aliased path)
+	//dsm(current_path());  //returns user/4 b/c this is the unaliased path
+	$account->content['squawk'] = array(
+		'#prefix' => '<div class="squawk-updates" id="squawk-updates">',
+		'#suffix' => '</div>',
+		'#type' => 'user_profile_item',
+		'#title' => t('Updates'),
+		'#markup' => '<p>Here is where the updates go.</p><br/>' . $markup,
+	);
+}
+function squawk_squawk_update_form($form, &$form_state, $uid) {
+	$form = array();
+	global $user;
+	//load the user specific tags from squawk_tags
+	//dont assume the vid just in case ...
+	$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+	//the current user's tags all have the username as the parent tid.
+	$query = new EntityFieldQuery;
+	$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+		->propertyCondition('name', $user->name)
+		->propertyCondition('vid', $vocabulary->vid)
+		->execute();
+	
+	$tag_default_value = array();
+	$options = array();
+	//make sure it has a value. It should have.
+	if(isset($entities['taxonomy_term'])) {
+		$user_tid = array_keys($entities['taxonomy_term']);
+		$terms = taxonomy_get_tree($vocabulary->vid,$user_tid[0]);
+		foreach($terms as $term) {
+			//build the options array for the checkboxes control
+			$options[$term->tid] = $term->name;
+			if( $term->name == 'New') {
+				$tag_default_value[$term->tid] = $term->tid;
+			}
+		}
+	}
+	//build the form
+	$form['message'] = array(
+		'#type' => 'textarea',
+		'#rows' => 5,
+		'#title'=> t('Type It!'),
+		'#attributes' => array('class' => array('squawk-message-content',)),
+		'#resizable' => TRUE,
+		'#prefix' => '<div class="squawk-message-textarea-wrapper">',
+		'#suffix' => '</div>',
+		'#weight' => -40,
+	);
+	$form['private'] = array(
+		'#type' => 'checkbox',
+		'#default_value' => FALSE,
+		'#title' => t('Private (only recipient can view)'),
+		'#weight' => -35,
+	);
+	$form['tags'] = array(
+		'#type' => 'checkboxes',
+		'#options' => $options,
+		'#default_value' => $tag_default_value,
+		'#title' => t('Tag It!'),
+		'#weight' => -30,
+	);
+	$form['new_tag'] = array(
+		'#type' => 'value',
+		'#value' => reset($tag_default_value), //returns the first value of the array
+	);
+	/*$form['add_new_tag'] = array(
+		'#type' => 'button',
+		'#value' => t('New Tag'),
+		'#weight' => -30,
+		//'#process' => array('_squawk_add_tag',),
+	);*/
+	$form['recipient'] = array(
+		'#type' => 'value',
+		'#value' => $uid,
+	);
+    $form['squawk_bonus_receivers'] = array(
+	  '#type' => 'checkboxes',
+	  '#options' => array('leads'=>t('Leads'), 'reports'=>t('Reports'), 'peers'=>t('Peers'), 'self'=>t('Self')),
+	  '#title' => t('Copy this to my:'),
+	  '#weight' => -25,
+	);
+	$form['submit'] = array( 
+		'#type' => 'submit',
+		'#value' => t('Tell it!'),
+	);
+	return $form;
+}
+function squawk_squawk_update_form_submit($form, &$form_state) {
+	//dsm($form);
+	//the data are in $form_state['values'] array
+	//repare the new node for saving.
+	$node = new stdClass();
+	$node->type = 'squawk_update';
+	node_object_prepare($node);
+	$node->language = LANGUAGE_NONE;
+	$node->comment = 0; 
+	//set the values
+	$node->field_squawk_recipient[$node->language][0]['value'] = $form_state['values']['recipient'];
+	$counter = 0;
+	//set the new tag as a value in case it got unchecked
+	$new_tag = $form_state['values']['new_tag'];
+	$form_state['values']['tags'][$new_tag] = (int)$new_tag;
+
+	foreach($form_state['values']['tags'] as $key=>$value) {
+		if($value !=0) {
+			$node->field_squawk_tags[$node->language][$counter]['tid'] = $value;
+			$counter = $counter + 1;
+		}
+	}
+
+	//$node->field_squawk_tags[$node->language][0]['tid'] = $form_state['values']['tags'];
+	$node->body[$node->language][0]['value'] = $form_state['values']['message'];
+	$node->field_squawk_private[$node->language][0]['value'] = $form_state['values']['private'];
+	//dsm($form_state);
+	node_save($node);
+	//process any requests to propagate this update to other recipients based on values in ['squawk_bonus_receivers']
+	if (isset($node) && $form_state['values']['squawk_bonus_receivers']) {
+		//hello to the folks at home
+		//dsm($node->nid . ' and ...');
+		//dsm($form_state['values']['squawk_bonus_receivers']);
+		foreach ($form_state['values']['squawk_bonus_receivers'] as $key => $reltype) {
+			//dsm($reltype);
+		//if ($reltype != 0) {
+			//dsm("hello world");
+			squawk_propagate_update($node, strtolower($reltype));
+		//}
+		}
+	}
+	//return to the main update page the user was on. that should provide feedback that the save was successful.
+	$form_state['redirect'] = 'user/' . $form_state['values']['recipient'];
+	return;
+}
+function squawk_propagate_update($node, $reltype) {
+  global $user;
+  $relations = squawk_relationships($user->uid,$reltype);
+  //dsm($relations);
+  //dsm($node);
+  if (count($relations) > 0) {
+    foreach ($relations as $key=>$value) {
+		//each of the members of the array is a valid user. The uid is the $key and a link to the page is in the value array.
+		  //here we just need the key.
+		  //prepare the new node for saving.
+		$copy = new stdClass();
+		$copy->type = 'squawk_update';
+		node_object_prepare($copy);
+		$copy->language = $node->language;
+		$copy->comment = $node->comment;
+		//set the values
+		$copy->field_squawk_recipient[$node->language][0]['value'] = $key;
+		if(!isset($node->field_squawk_tags[$node->language])) {
+			$tid_count = 0;
+		}
+		else {
+			$tid_count = count($node->field_squawk_tags[$node->language]);
+		}
+		for ($i=0; $i<$tid_count - 1; $i++){
+			$copy->field_squawk_tags[$node->language][$i]['tid'] = $node->field_squawk_tags[$node->language][$i]['tid'];
+		}
+		}
+		$copy->body[$node->language][0]['value'] = $node->body[$node->language][0]['value'];
+		$copy->field_squawk_private[$node->language][0]['value'] = $node->field_squawk_private[$node->language][0]['value'];
+		node_save($copy);
+		if (isset($copy->nid)) { 
+			//the save completed . I put this here as a dummy statement.
+			dsm('Update posted to user ' . $key . '.');
+		}
+	}
+	return;
+}
+/*
+ *	squawk_fetch_updates($user)
+ */
+ function squawk_fetch_updates($viewer_uid, $recipient_uid) {
+	//returns a render array I think.
+	$viewer = user_load($viewer_uid);
+	$recipient = user_load($recipient_uid);
+	//this is the main driver for getting the right nids
+	$query = new EntityFieldQuery;
+	$result = $query -> entityCondition('entity_type', 'node')
+		-> entityCondition('bundle', 'squawk_update')
+		-> fieldCondition('field_squawk_recipient', 'value', $recipient_uid)
+		-> propertyOrderBy('created', 'DESC')
+		-> execute();
+	if(isset($result['node'])) {
+		//dsm($result['node']);
+		$nids = array_keys($result['node']);
+	}
+	else {
+		//no records were returned. send a message.
+		$message = 'There were no updates to return for this particular user.';
+		drupal_set_message($message, 'status');
+		return;
+	}
+	//load the nids and the relevant users
+	$nodes = node_load_multiple($nids);
+	$viewer = user_load($viewer_uid);
+	$recipient = user_load($recipient_uid);
+	//show the nids
+	$output = node_view_multiple($nodes);
+	return $output;
+ }

@@ -1,0 +1,9 @@
+name = Squawk
+description = Student Affairs Workplace Update Network.
+package = Squawk
+core = 7.x
+files[] = squawk.module
+files[] = squawk.install
+files[] = squawk.pages.inc
+files[] = squawk_forms.inc
+

@@ -1,0 +1,215 @@
+/************************************
+               LAYOUT
+************************************/
+body.front, body.not-front {
+	font-size: 110%; /*make font-size go back up to 16px*/
+}
+
+article.node-squawk-update {
+	padding: 1em 1em 0.6em;
+	margin: 0 0 1em;
+	border-radius: 6px;
+	background: none 0 0 no-repeat scroll #fff;
+	-webkit-box-shadow:  0px 3px 3px 0px rgba(102, 99, 79, 15);
+	box-shadow:  0px 3px 3px 0px rgba(102, 99, 79, 15);
+}
+
+/************************************
+          UPDATES LIST
+************************************/
+article.node-squawk-update nav.node-links {
+	line-height: 1em;
+	padding: 0;
+	margin: 0;
+}
+
+article.node-squawk-update nav.node-links ul {
+	float: right;
+	margin: 0;
+	line-height: 1em;
+}
+
+article.node-squawk-update nav.node-links .node-readmore a,
+article.node-squawk-update nav.node-links .node-readmore a:link,
+article.node-squawk-update nav.node-links .node-readmore a:visited {
+	display: block;
+	border: 0 none;
+	margin: 0;
+	font-weight: bold;
+	padding: 0.6em 3em 0.6em 1em;
+	border-radius: 6px;
+	color: #494637;
+	text-shadow: 1px 1px #E9E7D8;
+	text-decoration: none;
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat rgb(224,217,188); /* Old browsers */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -moz-linear-gradient(top, rgb(224,217,188) 0%, rgb(224,217,188) 12%, rgb(197,193,162) 32%, rgb(157,154,127) 100%); /* FF3.6+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgb(224,217,188)), color-stop(12%,rgb(224,217,188)), color-stop(32%,rgb(197,193,162)), color-stop(100%,rgb(157,154,127))); /* Chrome,Safari4+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -webkit-linear-gradient(top, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* Chrome10+,Safari5.1+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -o-linear-gradient(top, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* Opera 11.10+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -ms-linear-gradient(top, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* IE10+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, linear-gradient(to bottom, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e0d9bc', endColorstr='#9d9a7f',GradientType=0 ); /* IE6-9 */
+}
+
+article.node-squawk-update nav.node-links .node-readmore a:focus,
+article.node-squawk-update nav.node-links .node-readmore a:hover,
+article.node-squawk-update nav.node-links .node-readmore a:active {
+	color: #fff;
+	text-shadow: 1px 1px #7F7A5E;
+	text-decoration: none;
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat rgb(157,154,127); /* Old browsers */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -moz-linear-gradient(top, rgb(157,154,127) 0%, rgb(197,193,162) 68%, rgb(224,217,188) 88%, rgb(224,217,188) 100%); /* FF3.6+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgb(157,154,127)), color-stop(68%,rgb(197,193,162)), color-stop(88%,rgb(224,217,188)), color-stop(100%,rgb(224,217,188))), url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat; /* Chrome,Safari4+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -webkit-linear-gradient(top, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* Chrome10+,Safari5.1+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -o-linear-gradient(top, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* Opera 11.10+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -ms-linear-gradient(top, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* IE10+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, linear-gradient(to bottom, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#9d9a7f', endColorstr='#e0d9bc',GradientType=0 ); /* IE6-9 */
+}
+
+/************************************
+            SIDEBAR NAV
+************************************/
+#page .region-sidebar-first .block,
+#page .region-sidebar-second .block {
+  background: none 0 0 scroll no-repeat transparent;
+}
+
+#page .region ul.menu li {
+	border: 0 none;
+	margin: 0;
+}
+
+#page .region ul.menu li a { /*overrides global.css*/
+	background: none 0 0 scroll no-repeat transparent;
+	padding: 1em 1.5em 1em 1em;
+	border: 0 none;
+	margin: 0 0 0.5em;
+	border-radius: 6px;
+	color: #7F7A5E;
+	font-weight: bold;
+	font-size: 110%;
+	text-shadow: 1px 1px #E9E7D8;
+	text-decoration: none;
+}
+
+#page .region ul.menu li a,
+#page .region ul.menu li a:link,
+#page .region ul.menu li a:visited {
+	border: 0 none;
+	margin: 0 0 0.5em;
+	border-radius: 6px;
+	color: #494637;
+	text-shadow: 1px 1px #E9E7D8;
+	text-decoration: none;
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat rgb(224,217,188); /* Old browsers */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -moz-linear-gradient(top, rgb(224,217,188) 0%, rgb(224,217,188) 12%, rgb(197,193,162) 32%, rgb(157,154,127) 100%); /* FF3.6+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgb(224,217,188)), color-stop(12%,rgb(224,217,188)), color-stop(32%,rgb(197,193,162)), color-stop(100%,rgb(157,154,127))); /* Chrome,Safari4+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -webkit-linear-gradient(top, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* Chrome10+,Safari5.1+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -o-linear-gradient(top, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* Opera 11.10+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, -ms-linear-gradient(top, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* IE10+ */
+	background: url("../images/ui/arrow_right.svg") 95% 50% no-repeat, linear-gradient(to bottom, rgb(224,217,188) 0%,rgb(224,217,188) 12%,rgb(197,193,162) 32%,rgb(157,154,127) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#e0d9bc', endColorstr='#9d9a7f',GradientType=0 ); /* IE6-9 */
+}
+
+#page .region ul.menu li a:focus,
+#page .region ul.menu li a:hover,
+#page .region ul.menu li a:active,
+#page .region ul.menu li.expanded a.active { /*overrides global.css*/
+	color: #fff;
+	text-shadow: 1px 1px #7F7A5E;
+	text-decoration: none;
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat rgb(157,154,127); /* Old browsers */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -moz-linear-gradient(top, rgb(157,154,127) 0%, rgb(197,193,162) 68%, rgb(224,217,188) 88%, rgb(224,217,188) 100%); /* FF3.6+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgb(157,154,127)), color-stop(68%,rgb(197,193,162)), color-stop(88%,rgb(224,217,188)), color-stop(100%,rgb(224,217,188))), url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat; /* Chrome,Safari4+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -webkit-linear-gradient(top, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* Chrome10+,Safari5.1+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -o-linear-gradient(top, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* Opera 11.10+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, -ms-linear-gradient(top, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* IE10+ */
+	background: url("../images/ui/arrow_right_act.svg") 95% 50% no-repeat, linear-gradient(to bottom, rgb(157,154,127) 0%,rgb(197,193,162) 68%,rgb(224,217,188) 88%,rgb(224,217,188) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#9d9a7f', endColorstr='#e0d9bc',GradientType=0 ); /* IE6-9 */
+}
+
+#page .region ul.menu li.active-trail.expanded ul {
+	margin: 0 0 0 1em;
+}
+
+/************************************
+          TAXONOMY TAGS
+************************************/
+div.field-type-taxonomy-term-reference .field-label {
+	margin: 0 0 0.6em;
+}
+
+div.field-type-taxonomy-term-reference .field-item {
+	color: #002147;
+	font-weight: bold;
+	display: inline-block;
+	margin: 0 1em 1em 0;
+	padding: 0.3em 1em 0.3em 1.5em ;
+	-webkit-border-radius: 0.8em 0.2em 0.2em 0.8em;
+  border-radius: 0.9em 0.2em 0.2em 0.9em;
+	background: #efebdb; /* Old browsers */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -moz-linear-gradient(top,  rgb(179, 192, 206) 0%, rgb(230, 234, 239) 100%); /* FF3.6+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgb(179, 192, 206)), color-stop(100%,rgb(230, 234, 239))); /* Chrome,Safari4+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -webkit-linear-gradient(top,  rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* Chrome10+,Safari5.1+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -o-linear-gradient(top, rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* Opera 11.10+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -ms-linear-gradient(top, rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* IE10+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, linear-gradient(to bottom, rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='rgb(179, 192, 206)', endColorstr='rgb(230, 234, 239)',GradientType=0 ); /* IE6-9 */
+	-webkit-box-shadow: 0px 1px 1px 0px rgba(102, 99, 79, 15);
+	box-shadow: 0px 1px 1px 0px rgba(102, 99, 79, 15);
+}
+
+.form-checkboxes {
+	margin: 0 0 1.5em;
+}
+
+.form-checkboxes input[type="checkbox"] {
+	display: none;
+}
+
+.form-type-checkboxes label[for="edit-field-squawk-tags-und"] {
+	margin: 0 0 0.5em;
+}
+
+.form-checkboxes .form-item {
+	display: inline-block;
+}
+
+.form-checkboxes .form-item label{
+	cursor: pointer;
+	display: block;
+	margin: 0 1em 1em 0;
+	padding: 0.3em 1em 0.3em 1.5em ;
+	text-decoration: none;
+	-webkit-border-radius: 0.8em 0.2em 0.2em 0.8em;
+  border-radius: 0.9em 0.2em 0.2em 0.9em;
+	-webkit-box-shadow: 0px 1px 1px 0px rgba(102, 99, 79, 15);
+	box-shadow: 0px 1px 1px 0px rgba(102, 99, 79, 15);
+}
+
+.form-checkboxes .form-item label{
+	color: #9D9A7F;
+	background: #f7f6ee; /* Old browsers */
+	/* IE9 SVG, needs conditional override of 'filter' to 'none' */
+  background: url("../images/ui/holepunch_tan.svg") 0.2em 0.8em no-repeat, -moz-linear-gradient(top, #efebdb 0%, #f7f6ee 100%) scroll; /* FF3.6+ */
+	background: url("../images/ui/holepunch_tan.svg") 0.2em 0.8em no-repeat, -webkit-gradient(linear, left top, left bottom, color-stop(0%, #efebdb), color-stop(100%, #f7f6ee)) scroll; /* Chrome,Safari4+ */
+	background: url("../images/ui/holepunch_tan.svg") 0.2em 0.8em no-repeat, -webkit-linear-gradient(top, #efebdb 0%, #f7f6ee 100%) scroll; /* Chrome10+,Safari5.1+ */
+	background: url("../images/ui/holepunch_tan.svg") 0.2em 0.8em no-repeat, -o-linear-gradient(top, #efebdb 0%, #f7f6ee 100%) scroll; /* Opera 11.10+ */
+	background: url("../images/ui/holepunch_tan.svg") 0.2em 0.8em no-repeat, -ms-linear-gradient(top, #efebdb 0%, #f7f6ee 100%) scroll; /* IE10+ */
+	background: url("../images/ui/holepunch_tan.svg") 0.2em 0.8em no-repeat, linear-gradient(top, #efebdb 0%, #f7f6ee 100%) scroll; /* W3C */
+ filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#efebdb', endColorstr='#f7f6ee', GradientType=0 ); /* IE6-8 */ /*MUST ADD CONDITIONAL for IE 9 of 'filter: none;'*/
+}
+
+.form-checkboxes .form-item.tag-checked label{
+	color: #002147;
+	font-weight: bold;
+	background: #efebdb; /* Old browsers */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -moz-linear-gradient(top,  rgb(179, 192, 206) 0%, rgb(230, 234, 239) 100%); /* FF3.6+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -webkit-gradient(linear, left top, left bottom, color-stop(0%,rgb(179, 192, 206)), color-stop(100%,rgb(230, 234, 239))); /* Chrome,Safari4+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -webkit-linear-gradient(top,  rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* Chrome10+,Safari5.1+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -o-linear-gradient(top, rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* Opera 11.10+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, -ms-linear-gradient(top, rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* IE10+ */
+	background: url("../images/ui/holepunch.svg") 0.2em 0.8em no-repeat, linear-gradient(to bottom, rgb(179, 192, 206) 0%,rgb(230, 234, 239) 100%); /* W3C */
+	filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='rgb(179, 192, 206)', endColorstr='rgb(230, 234, 239)',GradientType=0 ); /* IE6-9 */
+}

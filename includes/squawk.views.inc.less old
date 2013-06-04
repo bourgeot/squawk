@@ -1,0 +1,201 @@
+<?php
+/* 
+ * Implements hook_views_data_alter(&$data)
+ *
+ */
+function squawk_views_data_alter(&$data) {
+	//dsm('hello world');
+	$data['statuses']['recipient']['title'] = t('Receiver');
+	$data['statuses']['recipient_is_current'] = array(
+      'real field' => 'recipient',
+      'title' => t('Recipient is current user'),
+      'help' => t('Current user is the one who received the status'),
+      'filter' => array(
+        'handler' => 'views_handler_filter_user_current'
+      ),
+	);
+	$data['user_relationship_types']['table']['join']['statuses'] = array(
+		'left_table' => 'user_relationships',
+		'left_field' => 'rtid',
+		'field' => 'rtid',
+		'type' => 'inner',
+		
+	);
+	$data['user_relationships']['table']['join']['statuses'] = array(
+		'left_table' => 'statuses',
+		'left_field' => 'recipient',
+		'field' => 'requester_id',
+		'type' => 'inner',
+		
+	);
+    $data['statuses']['recipient_relationships'] = array(
+		'title' => t('Recipient Relationships'),
+		'help' => t('Recipient of status is related to the requester id side of the UR table.'),
+		'field' => array(
+			'field' => 'recipient',
+			'handler' => 'views_handler_field',
+			'click sortable' => TRUE,
+		),
+		'filter' => array(
+		  'field' => 'recipient',
+		  'handler' => 'views_handler_filter_numeric',
+		),
+		'sort' => array(
+		  'field' => 'recipient',
+		  'handler' => 'views_handler_sort',
+		),
+		'argument' => array(
+		  'field' => 'recipient',
+		  'handler' => 'views_handler_argument_numeric',
+		),
+		'relationship' => array(
+			'relationship table' => 'statuses',
+			'relationship field' => 'recipient',
+			'base' => 'user_relationships',
+			'base field' => 'requester_id',
+			'type' => 'INNER',
+			'handler' => 'views_handler_relationship',
+		),
+	);	
+	$data['statuses']['reverse_name'] = array(
+      'title' => t('Reverse Name'),
+      'help' => t('Reverse Name of the relationship (singular)'),
+      'field' => array(
+        'handler' => 'views_handler_field',
+		'field' => 'reverse_name',
+		'table' => 'user_relationship_types',
+        'click sortable' => TRUE
+      ),      
+	  'argument' => array(
+        'handler' => 'views_handler_argument_string'
+      ),
+	  'filter' => array(
+		'handler' => 'views_handler_filter_string',
+	  ),
+
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    );
+	$data['statuses']['rtid'] = array(
+		'title' => t('relationship type id'),
+		'help' => t('brings in the relationship type table'),
+		'field' => array(
+			'field' => 'rtid',
+			//'table' => 'user_relationships',
+			'table' => 'user_relationship_types',
+			'handler' => 'views_handler_field',
+		),
+		'filter' => array(
+		  'field' => 'rtid',
+		  'handler' => 'views_handler_filter_numeric',
+		),
+      'relationship' => array(
+        'base' => 'user_relationship_types',
+		'base field' => 'rtid',
+        'field' => 'rtid',
+		'type' => 'INNER',
+        'help' => t('Bring in name, type, and other properties of relationships'),
+		'handler' => 'views_handler_relationship_squawk_st_ur',
+      ),
+    );
+	$data['statuses']['recip-requestr'] = array(
+		'title' => 'RecipientRequester',
+		'real field' => 'recipient',
+		'relationship' => array(
+			'base' => 'user_relationships',
+			'base field' => 'requester_id',
+			'handler' => 'views_handler_relationship',
+			'type' => 'INNER',
+		),
+	);
+	//user relationships additions
+	// tcb adding this for other fields 8/21/2012
+	$data['user_relationships_types'] = array(
+	'reverse_name' =>  array(
+      'title' => t('Reverse Name'),
+      'help' => t('Reverse Name of the relationship (singular)'),
+      'argument' => array(
+        'handler' => 'views_handler_argument_string'
+      ),
+	  'filter' => array(
+		'handler' => 'views_handler_filter_string',
+	  ),
+      'field' => array(
+		'field' => 'reverse_name',
+        'handler' => 'views_handler_field',
+        'click sortable' => TRUE
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+	'reverse_plural_name' => array(
+      'title' => t('Reverse Plural name'),
+      'help' => t('Reverse Name of the relationship (plural)'),
+      'argument' => array(
+        'handler' => 'views_handler_argument_string'
+      ),
+      'field' => array(
+		'field' => 'reverse_plural_name',
+        'handler' => 'views_handler_field',
+        'click sortable' => TRUE
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+    ),
+	);
+
+	
+	/*$data['statuses']['arg_is_our_lead'] = array(
+		'title' => t('Argument is Our Lead'),
+		'help' => t('The status page viewed is the lead for the c.u. and peer status messages are also visible.'),
+		'argument' => array(
+		  'field' => 'recipient',
+		  'handler' => 'views_handler_argument_squawk_is_lead',
+		),
+		'relationship' => array(
+			'relationship table' => 'statuses',
+			'relationship field' => 'recipient',
+			'base' => 'user_relationships',
+			'base field' => 'requester_id',
+			'type' => 'INNER',
+			'handler' => 'views_handler_relationship',
+		),
+	);*/
+  // Adds an argument and filter for "is participant."
+  $data['statuses']['recipient_is_lead'] = array(
+    'title' => t('lead of current user'),
+    'help' => t('Limits status messages to those where the specified recipient is the lead of the cu.'),
+    'filter' => array(
+      'field' => 'recipient',
+      'handler' => 'views_handler_filter_squawk_recipient_is_lead',
+      'label' => t('recipient is lead of cu'),
+    ),
+    /*'argument' => array(
+      'field' => 'recipient',
+      'handler' => 'views_handler_argument_squawk_recipient_is_lead',
+      'label' => t('recipient is lead of cu'),
+    ),*/
+	/*'relationship' => array(
+		'relationship table' => 'statuses',
+		'relationship field' => 'recipient',
+		'base' => 'user_relationships',
+		'base field' => 'requester_id',
+		'type' => 'INNER',
+		'handler' => 'views_handler_relationship',
+	),*/
+  );
+
+}
+// argument is lead of current user (current user is requestee and argument is requester of rel type 'lead')
+// that will get case where you can see lead
+// posts show senders where argument is requester of rel type lead and sender is requestee.
+// you can see messages sent by people who have the same lead as you.
+
+
+
+// third case is that arg is requesteee and you are req uester of lead relationship.
+
+//need to add relationship to user relationships table for statuses table.

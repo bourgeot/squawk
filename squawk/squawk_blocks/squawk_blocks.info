@@ -1,0 +1,7 @@
+name = Squawk Blocks
+description = "Blocks that can be used with Squawk"
+dependencies[] = squawk
+package = "Squawk"
+core = 7.x
+files[]=squawk_blocks.module
+

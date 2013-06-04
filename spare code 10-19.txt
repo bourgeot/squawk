@@ -1,0 +1,124 @@
+function squawk_squawk_update_form($form, &$form_state, $uid) {
+	$form = array();
+	global $user;
+	//load the user specific tags from squawk_tags
+	//dont assume the vid just in case ...
+	$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+	//the current user's tags all have the username as the parent tid.
+	$query = new EntityFieldQuery;
+	$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+		->propertyCondition('name', $user->name)
+		->propertyCondition('vid', $vocabulary->vid)
+		->execute();
+	
+	$tag_default_value = array();
+	$options = array();
+	//make sure it has a value. It should have.
+	if(isset($entities['taxonomy_term'])) {
+		$user_tid = array_keys($entities['taxonomy_term']);
+		$terms = taxonomy_get_tree($vocabulary->vid,$user_tid[0]);
+		foreach($terms as $term) {
+			//build the options array for the checkboxes control
+			$options[$term->tid] = $term->name;
+			if( $term->name == 'New') {
+				$tag_default_value[$term->tid] = $term->tid;
+			}
+		}
+	}
+	//build the form
+	$form['message'] = array(
+		'#type' => 'textarea',
+		'#rows' => 5,
+		'#title'=> t('Type It!'),
+		'#attributes' => array('class' => array('squawk-message-content',)),
+		'#resizable' => TRUE,
+		'#prefix' => '<div class="squawk-message-textarea-wrapper">',
+		'#suffix' => '</div>',
+		'#weight' => -40,
+	);
+	$form['private'] = array(
+		'#type' => 'checkbox',
+		'#default_value' => FALSE,
+		'#title' => t('Private (only recipient can view)'),
+		'#weight' => -35,
+	);
+	$form['tags'] = array(
+		'#type' => 'checkboxes',
+		'#options' => $options,
+		'#default_value' => $tag_default_value,
+		'#title' => t('Tag It!'),
+		'#weight' => -30,
+	);
+	$form['new_tag'] = array(
+		'#type' => 'value',
+		'#value' => reset($tag_default_value), //returns the first value of the array
+	);
+	/*$form['add_new_tag'] = array(
+		'#type' => 'button',
+		'#value' => t('New Tag'),
+		'#weight' => -30,
+		//'#process' => array('_squawk_add_tag',),
+	);*/
+	$form['recipient'] = array(
+		'#type' => 'value',
+		'#value' => $uid,
+	);
+    $form['squawk_bonus_receivers'] = array(
+	  '#type' => 'checkboxes',
+	  '#options' => array('leads'=>t('Leads'), 'reports'=>t('Reports'), 'peers'=>t('Peers'), 'self'=>t('Self')),
+	  '#title' => t('Copy this to my:'),
+	  '#weight' => -25,
+	);
+	$form['submit'] = array( 
+		'#type' => 'submit',
+		'#value' => t('Tell it!'),
+	);
+	return $form;
+}
+
+
+function squawk_squawk_update_form_submit($form, &$form_state) {
+	//dsm($form);
+	//the data are in $form_state['values'] array
+	//repare the new node for saving.
+	$node = new stdClass();
+	$node->type = 'squawk_update';
+	node_object_prepare($node);
+	$node->language = LANGUAGE_NONE;
+	$node->comment = 0; 
+	//set the values
+	$node->field_squawk_recipient[$node->language][0]['value'] = $form_state['values']['recipient'];
+	$counter = 0;
+	//set the new tag as a value in case it got unchecked
+	$new_tag = $form_state['values']['new_tag'];
+	$form_state['values']['tags'][$new_tag] = (int)$new_tag;
+
+	foreach($form_state['values']['tags'] as $key=>$value) {
+		if($value !=0) {
+			$node->field_squawk_tags[$node->language][$counter]['tid'] = $value;
+			$counter = $counter + 1;
+		}
+	}
+
+	//$node->field_squawk_tags[$node->language][0]['tid'] = $form_state['values']['tags'];
+	$node->body[$node->language][0]['value'] = $form_state['values']['message'];
+	$node->field_squawk_private[$node->language][0]['value'] = $form_state['values']['private'];
+	//dsm($form_state);
+	node_save($node);
+	//process any requests to propagate this update to other recipients based on values in ['squawk_bonus_receivers']
+	if (isset($node) && $form_state['values']['squawk_bonus_receivers']) {
+		//hello to the folks at home
+		//dsm($node->nid . ' and ...');
+		//dsm($form_state['values']['squawk_bonus_receivers']);
+		foreach ($form_state['values']['squawk_bonus_receivers'] as $key => $reltype) {
+			//dsm($reltype);
+		//if ($reltype != 0) {
+			//dsm("hello world");
+			squawk_propagate_update($node, strtolower($reltype));
+		//}
+		}
+	}
+	//return to the main update page the user was on. that should provide feedback that the save was successful.
+	$form_state['redirect'] = 'user/' . $form_state['values']['recipient'];
+	return;
+}

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <title>D3 Page Template</title>
+        <script type="text/javascript" src="d3/d3.v3.js"></script>
+    </head>
+    <body>
+		<div id="viz"></div>
+        <script type="text/javascript">		
+            // Your beautiful D3 code will go here
+			
+			var w = 500;
+			var h = 500;
+			//var orgurl = "https://siaapps.uits.arizona.edu/home/orgs/ua_orgs/path/8107.json?r=1";
+			//var orgs=d3.json(orgurl).get();
+			var blob = {"UaOrgs":[{"UaOrg":{"id":"8107","name":"Student Affairs Systems Group","parent_id":"ENRL","parent_name":"Enrollment Services","hr_code":"8107","hr_name":"Student Affairs Systems Group","hr_parent_code":"ENRL","hr_parent_name":"Enrollment Services","fin_code":"8107","fin_name":"Student Affairs Systems Group","fin_parent_code":"ENRL","fin_parent_name":"Enrollment Services","lft":"1204","rght":"1205","link":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/8107","servicelink":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/8107.xml","htmllink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/8107'>Student Affairs Systems Group<\/a>","htmlservicelink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/8107.xml'>Student Affairs Systems Group<\/a>","htmlparentlink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/ENRL'>Student Affairs Systems Group<\/a>","pathservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/ENRL.xml'>Student Affairs Systems Group<\/a>","pathreverseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/ENRL.xml?r=1'>Student Affairs Systems Group<\/a>","childrenseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/children\/ENRL.xml'>Student Affairs Systems Group<\/a>","hrOnly":"0","finOnly":"0","hrAndFin":"1"}},{"UaOrg":{"id":"ENRL","name":"Enrollment Services","parent_id":"STDA","parent_name":"Student Affairs","hr_code":"ENRL","hr_name":"Enrollment Services","hr_parent_code":"STDA","hr_parent_name":"Student Affairs","fin_code":"ENRL","fin_name":"Enrollment Services","fin_parent_code":"STDA","fin_parent_name":"VP for Student Affairs","lft":"1203","rght":"1262","link":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/ENRL","servicelink":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/ENRL.xml","htmllink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/ENRL'>Enrollment Services<\/a>","htmlservicelink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/ENRL.xml'>Enrollment Services<\/a>","htmlparentlink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/STDA'>Enrollment Services<\/a>","pathservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/STDA.xml'>Enrollment Services<\/a>","pathreverseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/STDA.xml?r=1'>Enrollment Services<\/a>","childrenseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/children\/STDA.xml'>Enrollment Services<\/a>","hrOnly":"0","finOnly":"0","hrAndFin":"1"}},{"UaOrg":{"id":"STDA","name":"Student Affairs","parent_id":"PVST","parent_name":"Exec VP Acad Affairs and Provost","hr_code":"STDA","hr_name":"Student Affairs","hr_parent_code":"PVST","hr_parent_name":"Exec VP Acad Affairs\/Provost","fin_code":"STDA","fin_name":"VP for Student Affairs","fin_parent_code":"PVST","fin_parent_name":"Sr VP Acad Affairs & Provost","lft":"1196","rght":"1419","link":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/STDA","servicelink":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/STDA.xml","htmllink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/STDA'>Student Affairs<\/a>","htmlservicelink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/STDA.xml'>Student Affairs<\/a>","htmlparentlink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/PVST'>Student Affairs<\/a>","pathservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/PVST.xml'>Student Affairs<\/a>","pathreverseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/PVST.xml?r=1'>Student Affairs<\/a>","childrenseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/children\/PVST.xml'>Student Affairs<\/a>","hrOnly":"0","finOnly":"0","hrAndFin":"1"}},{"UaOrg":{"id":"PVST","name":"Exec VP Acad Affairs and Provost","parent_id":"MAIN","parent_name":"Main Campus","hr_code":"PVST","hr_name":"Exec VP Acad Affairs\/Provost","hr_parent_code":"MAIN","hr_parent_name":"Main Campus","fin_code":"PVST","fin_name":"Sr VP Acad Affairs & Provost","fin_parent_code":"MAIN","fin_parent_name":"Main Campus","lft":"289","rght":"1514","link":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/PVST","servicelink":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/PVST.xml","htmllink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/PVST'>Exec VP Acad Affairs and Provost<\/a>","htmlservicelink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/PVST.xml'>Exec VP Acad Affairs and Provost<\/a>","htmlparentlink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/MAIN'>Exec VP Acad Affairs and Provost<\/a>","pathservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/MAIN.xml'>Exec VP Acad Affairs and Provost<\/a>","pathreverseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/MAIN.xml?r=1'>Exec VP Acad Affairs and Provost<\/a>","childrenseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/children\/MAIN.xml'>Exec VP Acad Affairs and Provost<\/a>","hrOnly":"0","finOnly":"0","hrAndFin":"1"}},{"UaOrg":{"id":"MAIN","name":"Main Campus","parent_id":"UNAZ","parent_name":"University","hr_code":"MAIN","hr_name":"Main Campus","hr_parent_code":"UNAZ","hr_parent_name":"","fin_code":"MAIN","fin_name":"Main Campus","fin_parent_code":"UNAZ","fin_parent_name":"University","lft":"2","rght":"1515","link":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/MAIN","servicelink":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/MAIN.xml","htmllink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/MAIN'>Main Campus<\/a>","htmlservicelink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/MAIN.xml'>Main Campus<\/a>","htmlparentlink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/UNAZ'>Main Campus<\/a>","pathservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/UNAZ.xml'>Main Campus<\/a>","pathreverseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/UNAZ.xml?r=1'>Main Campus<\/a>","childrenseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/children\/UNAZ.xml'>Main Campus<\/a>","hrOnly":"0","finOnly":"0","hrAndFin":"1"}},{"UaOrg":{"id":"UNAZ","name":"University","parent_id":"UNAZ","parent_name":"University","hr_code":"UNAZ","hr_name":"University of Arizona","hr_parent_code":"UNAZ","hr_parent_name":"University of Arizona","fin_code":"UNAZ","fin_name":"University","fin_parent_code":"UNAZ","fin_parent_name":"University","lft":"1","rght":"1996","link":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/UNAZ","servicelink":"https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/UNAZ.xml","htmllink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/UNAZ'>University<\/a>","htmlservicelink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/UNAZ.xml'>University<\/a>","htmlparentlink":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/view\/UNAZ'>University<\/a>","pathservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/UNAZ.xml'>University<\/a>","pathreverseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/path\/UNAZ.xml?r=1'>University<\/a>","childrenseservice":"<a href='https:\/\/eds.arizona.edu\/orgs\/ua_orgs\/children\/UNAZ.xml'>University<\/a>","hrOnly":"0","finOnly":"0","hrAndFin":"1"}}]};
+			var uaOrgs = blob.UaOrgs;
+			//pure js. Munge this. uaOrgs is an array of objects. transform this into a dataset 
+			//that is an object with two arrays of objects nodes:[] and edges:[]. nodes have a name property, and edges has a source and a target that
+			//corresponds to an index in nodes. Here, the nodes are each org object.
+			var nodes = [];
+			var links = [];
+			//constructors
+			function node(name,id,parent_id, parent) {
+				this.name = name;
+				this.id = id;
+				this.parent_id = parent_id;
+				this.parent = parent;
+			}
+			function link(source, target) {
+				this.source = source;
+				this.target = target;
+			}
+			function findMe(targetId, nodes) {
+				var node = new Object();
+				for(var j=0; j<nodes.length; j++) {
+					if (nodes[j].id == targetId) {
+						return nodes[j];
+					}
+				}
+				return node;
+			}
+			//load nodes
+			for (var j=0; j<uaOrgs.length; j++) {
+				element  = new node(uaOrgs[j].UaOrg.name, uaOrgs[j].UaOrg.id, uaOrgs[j].UaOrg.parent_id);
+				nodes.push(element);
+			}
+			//load parents
+			for (var j=0; j<nodes.length; j++) {
+				if(nodes[j].parent_id != null) {
+					nodes[j].parent = findMe(nodes[j].parent_id, nodes);
+					element= new link(nodes[j], nodes[j].parent);
+					links.push(element);
+				}
+			}
+					
+			var list = d3.select("#viz").append("ul")
+				.selectAll("li")
+				.data(uaOrgs)
+				.enter()
+				.append("li")
+				.text(function(d) {
+					var x=d3
+					return d.UaOrg.name;
+				})
+				.style("font-size","12px");
+			var inner = list.attr("oid", function(d) {return d.UaOrg.id});
+			var sx = list.append("ul").selectAll("li")
+			.data(function(d) {
+				var propertyName = [];
+				var propertyValue = [];
+					for (var x in d.UaOrg) {
+						//propertyName.push(x);
+						propertyName.push(x + ": " + d.UaOrg[x]);
+						propertyValue.push(d.UaOrg[x]);
+					}
+				return propertyName;
+			})
+			.enter()
+			.append("li")
+			.text(function(d) {return d;});
+			
+			//force diagram maybe
+			
+			var svg = d3.select("body")
+				.append("svg")
+				.attr("width", w)
+				.attr("height", h);
+			
+			var force = d3.layout.force()
+				.nodes(nodes)
+				.links(links)
+				.size([w, h])
+				.linkDistance([50])
+				.charge([-100])
+				.start();
+				
+			var edges = svg.selectAll("line")
+				.data(links)
+				.enter()
+				.append("line")
+				.style("stroke", "#ccc")
+				.style("stroke-width", 1);
+			
+			var nodes = svg.selectAll("circle")
+				.data(nodes)
+				.enter()
+				.append("circle")
+				.attr("r", 10)
+				.style("fill", "blue")
+				.call(force.drag);
+		force.on("tick", function() {
+
+edges.attr("x1", function(d) { return d.source.x; })
+     .attr("y1", function(d) { return d.source.y; })
+     .attr("x2", function(d) { return d.target.x; })
+     .attr("y2", function(d) { return d.target.y; });
+
+nodes.attr("cx", function(d) { return d.x; })
+     .attr("cy", function(d) { return d.y; });
+
+});
+	    </script>
+    </body>
+</html>

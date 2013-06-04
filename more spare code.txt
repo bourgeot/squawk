@@ -1,0 +1,87 @@
+/*
+ * implements hook_validate
+ */
+
+function squawk_update_validate($node, $form) {
+	//see if there are any additional users selected to receive the update.
+	dsm($form);
+	dsm($node);
+	//dsm($form['values']['squawk_bonus_receivers']);
+	//$bonus = $form['values']['squawk_bonus_receivers'];
+}
+/* 
+ * form submission function
+ */
+
+function squawk_update_form_submit($node, $form) {
+	dsm($node);
+	dsm($form);
+	node_save($node);
+		//$node_id = $node->nid;
+		drupal_set_message("Saved as node: .");
+	
+}
+
+function squawk_form_squawk_update_alter($node, &$form_state) {
+	$form = array();
+	global $user;
+	//load the user specific tags from squawk_tags
+	//dont assume the vid just in case ...
+	$vocabulary = taxonomy_vocabulary_machine_name_load('squawk_tags');
+	//the current user's tags all have the username as the parent tid.
+	$query = new EntityFieldQuery;
+	$entities = $query->entityCondition('entity_type', 'taxonomy_term')
+		->propertyCondition('name', $user->name)
+		->propertyCondition('vid', $vocabulary->vid)
+		->execute();
+	//make sure it has a value. It should have.
+	if(isset($entities['taxonomy_term'])) {
+		$user_tid = array_keys($entities['taxonomy_term']);
+		$terms = taxonomy_get_tree($vocabulary->vid,$user_tid[0]);
+		$options = array();
+		foreach($terms as $term) {
+			//build the options array for the checkboxes control
+			$options[$term->tid] = $term->name;
+		}
+	}
+	//build the form
+	$form['special_body'] = array(
+		'#type' => 'textarea',
+		'#rows' => 5,
+		'#title'=> t('Type It!'),
+		'#attributes' => array('class' => array('squawk-update-content',)),
+		'#resizable' => TRUE,
+		'#prefix' => '<div class="squawk-update-textarea-wrapper">',
+		'#suffix' => '</div>',
+		'#weight' => -40,
+	);
+	$form['field_squawk_tags'] = array(
+		'#type' => 'checkboxes',
+		'#options' => $options,
+		'#title' => t('Tag It!'),
+		'#weight' => -35,
+	);
+	/*$form['add_new_tag'] = array(
+		'#type' => 'button',
+		'#value' => t('New Tag'),
+		'#weight' => -30,
+		//'#process' => array('_squawk_add_tag',),
+	);*/
+    $form['squawk_bonus_receivers'] = array(
+	  '#type' => 'checkboxes',
+	  '#options' => drupal_map_assoc(array('leads'=>t('Leads'), 'reports'=>t('Reports'), 'self'=>t('Home'))),
+	  '#title' => t('Copy this to my:'),
+	  '#weight' => -25,
+	);
+	$form['#submit'] = array(
+    '#value' => t('Tell It!'),
+	);
+	//if we are on a user's page, get the uid from the path
+	$location = drupal_parse_url(current_path());
+	//dsm($location);
+	/*$form['field_squawk_recipient'] = array(
+		'#type' => 'hidden',
+		'#value' => 1,
+	);*/
+	//return $form;
+}
