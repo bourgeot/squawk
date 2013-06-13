@@ -518,7 +518,12 @@ function new_channel_form($form, &$form_state) {
 			),
 		),
 	);
+	if(!isset($form['#parents'])) {
+		$form['#parents'] = array();
+	}
+	$form['#vocabulary'] = taxonomy_vocabulary_machine_name_load('channels');
 	$form_state['redirect'] = 'ext/channels';
+	//field_attach_form('taxonomy_term', NULL, $form, $form_state);
 	return $form;
 }
 function new_channel_form_add_file($form, &$form_state) {

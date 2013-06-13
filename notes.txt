@@ -1,0 +1,22 @@
+Notes.
+
+4 June.
+node/add/update is available.
+node/%node/edit will have to be messed with.
+comments will be opened up.
+
+Update
+==========
+title	Node module element (text)
+body	long text and summary (change this...no summary?)
+field_private
+field_recipient	int
+field_tags	term_reference
+field_archived	boolean
+field_previous_content	long text
+field_previous_title	text
+field_previous_author text
+field_previous_tags	text
+field_author_surname <--this probably shouldnt be done this way. its sole purpose is to index by alphabet.
+field_channels	term_reference
+field_mentions	term_reference

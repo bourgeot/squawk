@@ -8,6 +8,9 @@
 /* 
  *	implements hook_menu
  */
+ /*
+	node/add/<nodetype>
+ */
 function squawk_menu() {
 	 $items['frontpage'] = array(
 		'page callback' => 'squawk_frontpage',
